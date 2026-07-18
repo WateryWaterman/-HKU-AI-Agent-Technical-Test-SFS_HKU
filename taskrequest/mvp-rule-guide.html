@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MVP 规则选型导览：碰撞检测 vs 门净宽</title>
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --panel: #fcfbf8;
+      --panel2: #f0ece4;
+      --text: #201d18;
+      --muted: #6c675d;
+      --line: #d7d1c6;
+      --primary: #0a6a6e;
+      --primary-soft: #d7e9e8;
+      --warn: #9a4d1a;
+      --good: #3b6f2a;
+      --bad: #8a2e4f;
+      --radius: 18px;
+      --shadow: 0 10px 28px rgba(0,0,0,.06);
+      --max: 1200px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; color:var(--text); background:linear-gradient(180deg,#f8f7f3,#f1eee7);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+      line-height:1.65;
+    }
+    a{color:var(--primary); text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:var(--max); margin:0 auto; padding:24px}
+    .card{background:rgba(252,251,248,.9); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow)}
+    .hero{display:grid; grid-template-columns:1.25fr .95fr; gap:18px; padding-top:28px}
+    .hero-main,.hero-side{padding:26px}
+    h1{margin:0 0 10px; font-size:clamp(30px,4vw,50px); line-height:1.08}
+    h2{margin:0 0 14px; font-size:26px}
+    h3{margin:18px 0 8px; font-size:18px}
+    p{margin:10px 0}
+    .muted{color:var(--muted)}
+    .pill{display:inline-block; padding:6px 10px; border-radius:999px; background:var(--primary-soft); color:var(--primary); font-size:13px; margin:0 8px 8px 0}
+    .layout{display:grid; grid-template-columns:280px 1fr; gap:18px; margin-top:18px; align-items:start}
+    .toc{position:sticky; top:10px; padding:18px}
+    .toc h3{margin-top:0}
+    .toc a{display:block; color:var(--text); padding:8px 10px; border-radius:10px}
+    .toc a:hover{background:var(--panel2); text-decoration:none}
+    section{padding:24px; margin-bottom:18px}
+    .note{border-left:4px solid var(--primary); background:#f4f8f8; padding:14px 16px; border-radius:12px; margin:12px 0}
+    .warn{border-left-color:var(--warn); background:#faf4ef}
+    .ok{border-left-color:var(--good); background:#f3f8f0}
+    .grid2,.grid3{display:grid; gap:14px}
+    .grid2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .grid3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .mini{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px}
+    .mini h4{margin:0 0 8px; font-size:16px}
+    table{width:100%; border-collapse:collapse; border:1px solid var(--line); border-radius:14px; overflow:hidden; background:var(--panel)}
+    th,td{text-align:left; padding:12px 14px; border-bottom:1px solid var(--line); vertical-align:top}
+    th{background:#f1eee7}
+    tr:last-child td{border-bottom:none}
+    .score{font-weight:700; padding:4px 8px; border-radius:999px; display:inline-block; font-size:12px}
+    .s-low{background:#e5f2e1; color:var(--good)}
+    .s-mid{background:#f6ecd5; color:#8a6200}
+    .s-high{background:#f8dfe6; color:var(--bad)}
+    .accordion details{border:1px solid var(--line); border-radius:14px; padding:12px 14px; background:var(--panel); margin:10px 0}
+    .accordion summary{cursor:pointer; font-weight:600}
+    .resources{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px}
+    .linkcard{border:1px solid var(--line); border-radius:14px; padding:16px; background:var(--panel)}
+    .tag{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em}
+    .footer{padding:12px 0 36px; color:var(--muted); font-size:14px}
+    @media (max-width: 980px){.hero,.layout,.grid2,.grid3,.resources{grid-template-columns:1fr}.toc{position:static}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="card hero-main">
+        <div class="pill">IFC 版本</div><div class="pill">样本来源</div><div class="pill">规则选型</div>
+        <h1>碰撞检测 vs 门净宽检查：更适合你这次 MVP 的是哪条路？</h1>
+        <p>这份导览直接回答三件事：现在做演示与测试，应该参考哪个 IFC 版本；去哪里找可用的 IFC 样本；以及在“碰撞检测”和“门净宽检查”之间，哪条路线更稳、更容易解释、更适合 7 天内交付。</p>
+        <div class="note ok"><strong>先给结论：</strong>规范参考层面优先看 IFC 4.3；但工程实现层面，样本和库兼容性不够稳时，可以用 IFC4/IFC2x3 样本先把 MVP 跑通，再把概念和属性解释对齐到 4.3。</div>
+      </div>
+      <div class="card hero-side">
+        <h3>快速判断</h3>
+        <div class="mini" style="margin-bottom:12px">
+          <h4>你想先追求最稳演示</h4>
+          <p class="muted">优先门净宽 / 门属性检查，数据解释更直接，结果更容易做成人可审阅的卡片。</p>
+        </div>
+        <div class="mini">
+          <h4>你想更像 BIM 工程工具</h4>
+          <p class="muted">优先碰撞检测，视觉冲击更强，但几何与样本质量风险也更高。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="layout">
+      <nav class="toc card">
+        <h3>目录</h3>
+        <a href="#version">1. IFC 版本建议</a>
+        <a href="#samples">2. IFC 样本去哪找</a>
+        <a href="#compare">3. 两条规则对比</a>
+        <a href="#risk">4. 工程风险</a>
+        <a href="#recommend">5. 对你的推荐</a>
+        <a href="#links">6. 推荐入口</a>
+      </nav>
+
+      <main>
+        <section id="version" class="card">
+          <h2>1. IFC 版本建议</h2>
+          <p>如果你问“参考哪一版规范最稳”，答案是：<strong>IFC 4.3 现在是官方最新正式标准</strong>，而且 buildingSMART 明确写了最新官方版本为 4.3.2.0，并对应 ISO 16739-1:2024。</p>
+          <table>
+            <thead><tr><th>版本策略</th><th>适用场景</th><th>为什么</th></tr></thead>
+            <tbody>
+              <tr><td>规范阅读：IFC 4.3</td><td>查实体、属性、Pset、官方术语</td><td>它是最新官方标准，文档更新、门属性等查阅体验更好</td></tr>
+              <tr><td>样本实验：IFC4 / IFC2x3 也可接受</td><td>快速拿公开模型做 parser / viewer / rule demo</td><td>历史样本更多，兼容性更成熟，很多教程和 viewer 示例仍基于这些版本</td></tr>
+              <tr><td>最终表述：以 4.3 为口径</td><td>写 README、汇报设计判断</td><td>能体现你跟的是当前正式标准，而不是过时资料</td></tr>
+            </tbody>
+          </table>
+          <div class="note warn">也就是说，你不必教条地要求“演示样本必须全部来自 4.3”。对这次测试来说，<strong>规范认知用 4.3，工程样本用最容易跑通的版本</strong>，往往是更理性的工程判断。</div>
+          <div class="accordion">
+            <details open>
+              <summary>一句话版本结论</summary>
+              <p>4.3 是“认知和表述上的主版本”，而 IFC4 / IFC2x3 可以是“演示和兼容性上的过渡版本”。</p>
+            </details>
+          </div>
+        </section>
+
+        <section id="samples" class="card">
+          <h2>2. IFC 样本去哪找</h2>
+          <p>最推荐你先从“官方样本 + 社区经典小模型”两路并行。前者更正规，后者更容易看懂和改造。</p>
+          <div class="grid2">
+            <div class="mini">
+              <h4>官方首选</h4>
+              <p class="muted">buildingSMART 的 <a target="_blank" rel="noopener noreferrer" href="https://github.com/buildingSMART/Sample-Test-Files">Sample-Test-Files</a> 仓库，包含多种 schema 版本和简单 PCERT discipline models，适合拿来做 parser 与 viewer 验证。</p>
+            </div>
+            <div class="mini">
+              <h4>4.3 专项样本</h4>
+              <p class="muted"><a target="_blank" rel="noopener noreferrer" href="https://github.com/buildingSMART/IFC4.3.x-sample-models">IFC4.3.x-sample-models</a> 更贴近 4.3，适合你在熟悉后拿来验证“我是不是按照最新规范理解对象和关系”。</p>
+            </div>
+            <div class="mini">
+              <h4>经典教学模型</h4>
+              <p class="muted"><a target="_blank" rel="noopener noreferrer" href="https://github.com/aothms/IfcOpenHouse">IfcOpenHouse</a> 是最经典的小型教学样本之一，门、窗、墙、屋顶齐全，结构相对容易理解。</p>
+            </div>
+            <div class="mini">
+              <h4>可编程复刻版</h4>
+              <p class="muted"><a target="_blank" rel="noopener noreferrer" href="https://github.com/cvillagrasa/IfcOpenHouse">IfcOpenHouse Python 复刻</a> 适合你一边看模型，一边看它是如何由代码生成的。</p>
+            </div>
+          </div>
+          <div class="note">找演示样本时，优先满足这三个条件：<br/>1) 体量小；2) 门/墙/空间等对象清晰；3) 在 viewer 中能稳定打开。不要一开始就拿超复杂综合体做首个样本。</div>
+        </section>
+
+        <section id="compare" class="card">
+          <h2>3. 两条规则对比</h2>
+          <table>
+            <thead>
+              <tr><th>维度</th><th>碰撞检测</th><th>门净宽检查</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>规则难度</td><td><span class="score s-high">较高</span> 涉及几何求交、对象过滤、容差和结果去重</td><td><span class="score s-mid">中等</span> 核心是找 door 对象、读宽度、套阈值和补解释</td></tr>
+              <tr><td>输入依赖</td><td>几何质量要求高，模型坐标、布尔表达、构件分类都影响结果</td><td>更依赖门对象属性是否完整，几何要求相对没那么高</td></tr>
+              <tr><td>是否容易解释</td><td>中等，用户会追问“这算碰撞还是容差内接触”</td><td>高，用户容易理解“这扇门宽度小于阈值所以命中”</td></tr>
+              <tr><td>可视化效果</td><td>强，红色高亮两个碰撞对象很直观</td><td>中上，单门高亮 + 指标卡片也不错，但视觉冲击略弱</td></tr>
+              <tr><td>对属性依赖</td><td>低到中，主要靠几何与对象类别</td><td>高，门宽、FireExit、FireRating 等字段越完整越好</td></tr>
+              <tr><td>实现后扩展性</td><td>高，可继续扩到墙/梁/管/设备碰撞</td><td>高，可继续扩到门净高、疏散门属性、门开启方向等</td></tr>
+              <tr><td>演示稳定性</td><td><span class="score s-mid">中</span> 易受模型质量影响</td><td><span class="score s-low">较高</span> 更容易做成稳定 demo</td></tr>
+              <tr><td>更适合本题 7 天 MVP</td><td>适合想做“工程感 + 3D 高亮”的路线</td><td>适合想做“解释性 + 稳妥交付”的路线</td></tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="risk" class="card">
+          <h2>4. 工程风险</h2>
+          <div class="grid2">
+            <div class="mini">
+              <h4>碰撞检测的主要坑</h4>
+              <p class="muted">假阳性与假阴性、容差阈值难讲清、样本模型几何导出不稳定、结果去重和分组麻烦。如果前端还要联动高亮，多半会把时间压得更紧。</p>
+            </div>
+            <div class="mini">
+              <h4>门净宽检查的主要坑</h4>
+              <p class="muted">样本里不一定有标准化宽度属性；有时宽度要从类型、属性集或几何估算中找；“消防门”也不一定被显式填成 FireExit，需要加字段缺失策略。</p>
+            </div>
+          </div>
+          <div class="note ok">从“可运行 + 有思考 + 有品味”的角度看，门净宽路线更容易把<strong>检查依据、计算结果、人工复核界面</strong>三件事讲完整。</div>
+        </section>
+
+        <section id="recommend" class="card">
+          <h2>5. 对你的推荐</h2>
+          <div class="grid3">
+            <div class="mini">
+              <h4>推荐 A：最稳 MVP</h4>
+              <p class="muted">做 IfcDoor 净宽检查，再附带 FireRating / FireExit 属性展示。这样既有“规则”，又有“解释”，还能体现 IFC 语义价值。</p>
+            </div>
+            <div class="mini">
+              <h4>推荐 B：更炫展示</h4>
+              <p class="muted">做简单 clash detection，只检查一类明确对象对，比如墙 vs 管。对象范围越窄，结果越稳。</p>
+            </div>
+            <div class="mini">
+              <h4>推荐 C：双阶段</h4>
+              <p class="muted">先用门规则拿下可运行底线，再补一个很轻的碰撞可视化作为加分项，而不是反过来。</p>
+            </div>
+          </div>
+          <div class="note warn">如果你现在还在边学 IFC 边做原型，我更推荐你先拿门规则开局。碰撞检测可以作为第二优先级，而不是第一天就绑定在主路径上。</div>
+        </section>
+
+        <section id="links" class="card">
+          <h2>6. 推荐入口</h2>
+          <div class="resources">
+            <div class="linkcard">
+              <div class="tag">最新标准</div>
+              <h3><a target="_blank" rel="noopener noreferrer" href="https://www.buildingsmart.org/standards/bsi-standards/industry-foundation-classes/">buildingSMART: Industry Foundation Classes</a></h3>
+              <p>确认 4.3.2.0 / ISO 16739-1:2024 的官方入口。</p>
+            </div>
+            <div class="linkcard">
+              <div class="tag">正式规范索引</div>
+              <h3><a target="_blank" rel="noopener noreferrer" href="https://technical.buildingsmart.org/standards/ifc/ifc-schema-specifications/">IFC Schema Specifications</a></h3>
+              <p>查版本、发布状态和正式文档结构。</p>
+            </div>
+            <div class="linkcard">
+              <div class="tag">官方样本</div>
+              <h3><a target="_blank" rel="noopener noreferrer" href="https://github.com/buildingSMART/Sample-Test-Files">Sample-Test-Files</a></h3>
+              <p>最适合做 parser / viewer / demo 基础验证。</p>
+            </div>
+            <div class="linkcard">
+              <div class="tag">4.3 样本</div>
+              <h3><a target="_blank" rel="noopener noreferrer" href="https://github.com/buildingSMART/IFC4.3.x-sample-models">IFC4.3.x-sample-models</a></h3>
+              <p>更贴近 4.3 语境，适合后续做规范映射验证。</p>
+            </div>
+            <div class="linkcard">
+              <div class="tag">教学样本</div>
+              <h3><a target="_blank" rel="noopener noreferrer" href="https://github.com/aothms/IfcOpenHouse">IfcOpenHouse</a></h3>
+              <p>体量小、结构直观，非常适合理解门窗墙这些基础对象。</p>
+            </div>
+            <div class="linkcard">
+              <div class="tag">代码生成理解</div>
+              <h3><a target="_blank" rel="noopener noreferrer" href="https://github.com/cvillagrasa/IfcOpenHouse">IfcOpenHouse Python 复刻</a></h3>
+              <p>适合把“模型长什么样”和“代码如何造出模型”放到一起看。</p>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="footer">这份页面面向“做 1–2 条规则的 BIM 检查 MVP”而写，重点是帮助你快速定规则，而不是完整学习 IFC 全生态。</div>
+  </div>
+</body>
+</html>

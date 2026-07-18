@@ -1,0 +1,11 @@
+# 大体积规范数据（可重新下载，见 AGENTS.md / research/IFC_INDEX.md）
+research/IFC4_3/
+research/IFC4.3.x-development/
+research/IFC4x3_DEV-build_NOT-normative/
+
+# 个人笔记
+随手记.txt
+
+# 系统杂项
+.DS_Store
+Thumbs.db
