@@ -20,13 +20,24 @@ window.addEventListener('alpine:init', () => {
     failCursor: 0,
     unknownCursor: 0,
 
-    async init() {
+    init() {
+      this.$nextTick(() => {
+        try {
+          this.viewer = new IfcViewer('viewerCanvas');
+          this.viewer.onPick = (gid) => this.selectDoor(gid);
+          this.loadPresets();
+        } catch (e) {
+          console.error('viewer init error:', e);
+          this.error = `init failed: ${e.message}. If xeokit CDN issue, check F12 console.`;
+        }
+      });
+    },
+
+    async loadPresets() {
       try {
-        this.viewer = new IfcViewer('viewerCanvas');
-        this.viewer.onPick = (gid) => this.selectDoor(gid);
         this.presets = await api.getPresets();
       } catch (e) {
-        this.error = `init failed: ${e.message}`;
+        this.error = `load presets failed: ${e.message}`;
       }
     },
 
@@ -60,6 +71,10 @@ window.addEventListener('alpine:init', () => {
     async onFileSelected(event) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
+      if (!this.viewer) {
+        this.error = 'Viewer not initialized. Check F12 console for xeokit errors.';
+        return;
+      }
       this.loading = true;
       this.loadingMsg = `Uploading ${file.name}...`;
       this.error = null;

@@ -8,6 +8,7 @@ Swagger:
 """
 from __future__ import annotations
 
+import mimetypes
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -15,6 +16,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from .api import routes_check, routes_model, routes_override, routes_presets
+
+mimetypes.add_type("application/wasm", ".wasm")
+mimetypes.add_type("text/javascript", ".mjs")
 
 app = FastAPI(
     title="FSB Door Check API",
