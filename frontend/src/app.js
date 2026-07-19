@@ -82,8 +82,8 @@ window.addEventListener('alpine:init', () => {
         this.model = await api.uploadIfc(file);
         this.sessionId = this.model.session_id;
         this.loadingMsg = 'Loading 3D geometry...';
-        const url = URL.createObjectURL(file);
-        await this.viewer.loadIfcUrl(url);
+        const buffer = await file.arrayBuffer();
+        await this.viewer.loadIfcArrayBuffer(buffer);
         this.viewer.setNonDoorsXrayed(0.5);
         this.applyCheckColors();
         this.activeTab = 'results';
