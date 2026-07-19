@@ -51,4 +51,20 @@ export const api = {
     if (!r.ok) throw new Error(`summary failed (${r.status})`);
     return r.json();
   },
+
+  async exportModel(sessionId, format) {
+    const r = await fetch(`${API_BASE}/export/${sessionId}?format=${encodeURIComponent(format)}`, { method: 'POST' });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: r.statusText }));
+      if (r.status === 501 && err?.detail) {
+        const e = new Error(err.detail);
+        e.status = 501;
+        e.designDoc = err.design_doc;
+        e.planned = err.planned_formats;
+        throw e;
+      }
+      throw new Error(err.detail || `export failed (${r.status})`);
+    }
+    return r.json();
+  },
 };
