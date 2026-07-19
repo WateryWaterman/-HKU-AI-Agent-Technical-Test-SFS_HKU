@@ -1,8 +1,9 @@
 // xeokit viewer 封装 — IFC 加载 + 拾取 + 高亮 + X-ray + 楼层隔离
 // 对应 docs/CONTRACT.md §5 高亮映射规则
-// xeokit 2.6.x 用 WebIFCLoaderPlugin + ES module 本地加载(绕开 CDN Tracking Prevention)
+// xeokit 2.6.x WebIFCLoaderPlugin 需显式注入 web-ifc@0.0.51 的 {WebIFC, IfcAPI}(本地化,绕开 CDN Tracking Prevention)
 
 import * as xeokit from '../lib/xeokit-sdk.es.min.js';
+import * as WebIFC from '../lib/web-ifc-api.js';
 
 const STATUS_COLORS = {
   pass:       [0.133, 0.773, 0.369],
@@ -11,7 +12,7 @@ const STATUS_COLORS = {
   overridden: [0.231, 0.510, 0.965],
 };
 
-const XEOKIT_WASM_PATH = '/lib/';
+const WASM_PATH = '/lib/';
 
 export class IfcViewer {
   constructor(canvasId) {
@@ -21,6 +22,9 @@ export class IfcViewer {
     }
     if (!xeokit.WebIFCLoaderPlugin) {
       throw new Error('xeokit.WebIFCLoaderPlugin not found in this xeokit version.');
+    }
+    if (!WebIFC || !WebIFC.IfcAPI) {
+      throw new Error('web-ifc-api.js not loaded (import failed). Check /lib/web-ifc-api.js');
     }
     const canvas = document.getElementById(canvasId);
     if (!canvas) {
@@ -36,30 +40,48 @@ export class IfcViewer {
     this._storeyIds = new Set();
     this.onPick = null;
     this._setupPicking();
+    this._webIfcApiPromise = null;
   }
 
-  async loadIfcUrl(url) {
-    console.log('[viewer] loadIfcUrl start, url=', url);
+  async _ensureWebIfcApi() {
+    if (this._webIfcApiPromise) {
+      return this._webIfcApiPromise;
+    }
+    this._webIfcApiPromise = (async () => {
+      console.log('[viewer] initializing WebIFC IfcAPI, wasmPath=', WASM_PATH);
+      const ifcAPI = new WebIFC.IfcAPI();
+      ifcAPI.SetWasmPath(WASM_PATH);
+      await ifcAPI.Init();
+      console.log('[viewer] WebIFC IfcAPI ready');
+      return ifcAPI;
+    })();
+    return this._webIfcApiPromise;
+  }
+
+  async loadIfcArrayBuffer(buffer) {
+    console.log('[viewer] loadIfcArrayBuffer start, bytes=', buffer.byteLength);
+    const ifcAPI = await this._ensureWebIfcApi();
     let webIFCLoader;
     try {
       webIFCLoader = new xeokit.WebIFCLoaderPlugin(this.viewer, {
-        wasmPath: XEOKIT_WASM_PATH,
+        WebIFC,
+        IfcAPI: ifcAPI,
       });
-      console.log('[viewer] WebIFCLoaderPlugin created');
+      console.log('[viewer] WebIFCLoaderPlugin created (WebIFC + IfcAPI injected)');
     } catch (e) {
       console.error('[viewer] WebIFCLoaderPlugin ctor failed:', e);
-      throw new Error(`WebIFCLoaderPlugin ctor: ${e.message}`);
+      throw new Error(`WebIFCLoaderPlugin ctor: ${e.message || e}`);
     }
     let model;
     try {
-      model = webIFCLoader.load({ id: 'ifcModel', src: url, edges: true });
+      model = webIFCLoader.load({ id: 'ifcModel', ifc: buffer, edges: true });
       console.log('[viewer] load() returned, typeof=', typeof model,
         'isPromise=', !!(model && typeof model.then === 'function'),
         'hasOn=', !!(model && typeof model.on === 'function'),
         'loaded=', !!(model && model.loaded));
     } catch (e) {
       console.error('[viewer] load() threw:', e);
-      throw new Error(`WebIFCLoaderPlugin.load threw: ${e.message}`);
+      throw new Error(`WebIFCLoaderPlugin.load threw: ${e.message || e}`);
     }
     if (model && typeof model.then === 'function') {
       console.log('[viewer] awaiting model promise...');
@@ -81,7 +103,7 @@ export class IfcViewer {
           console.error('[viewer] model error event:', err);
           if (!settled) { settled = true; reject(new Error(`model load error: ${err}`)); }
         });
-        setTimeout(() => { if (!settled) { console.warn('[viewer] load timeout 30s, continuing'); done(); } }, 30000);
+        setTimeout(() => { if (!settled) { console.warn('[viewer] load timeout 60s, continuing'); done(); } }, 60000);
       });
     } else {
       console.warn('[viewer] model is neither Promise nor EventEmitter, assuming sync load');
