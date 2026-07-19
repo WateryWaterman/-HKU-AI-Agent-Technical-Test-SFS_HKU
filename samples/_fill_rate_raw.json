@@ -1,0 +1,1606 @@
+[
+  {
+    "file": "Clinic_Architectural_IFC2x3.ifc",
+    "schema": "IFC2X3",
+    "counts": {
+      "IfcSpace": 269,
+      "IfcBuildingStorey": 4,
+      "IfcDoor": 254,
+      "IfcDoorType": 19,
+      "IfcDoorLiningProperties": 19,
+      "IfcDoorPanelProperties": 0
+    },
+    "IfcSpace_explicit": {
+      "_total": 269,
+      "Name": {
+        "count": 269,
+        "pct": "100.0%",
+        "sample": "1AC1"
+      },
+      "LongName": {
+        "count": 269,
+        "pct": "100.0%",
+        "sample": "CENTRAL WAITING"
+      },
+      "Description": {
+        "count": 269,
+        "pct": "100.0%",
+        "sample": ""
+      },
+      "ObjectType": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "PredefinedType": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ElevationWithFlooring": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Pset_SpaceCommon": {
+      "_total": 269,
+      "_has_pset": 269,
+      "_has_pset_pct": "100.0%",
+      "IsExternal": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "PubliclyAccessible": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "HandicapAccessible": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossPlannedArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetPlannedArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Pset_SpaceOccupancyRequirements": {
+      "_total": 269,
+      "_has_pset": 0,
+      "_has_pset_pct": "0.0%",
+      "OccupancyType": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "OccupancyNumber": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "OccupancyNumberPeak": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "OccupancyTimePerDay": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "AreaPerOccupant": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "MinimumHeadroom": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Qto_SpaceBaseQuantities": {
+      "_total": 269,
+      "_has_pset": 0,
+      "_has_pset_pct": "0.0%",
+      "Height": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "FinishCeilingHeight": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "FinishFloorHeight": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossPerimeter": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetPerimeter": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossFloorArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetFloorArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossWallArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetWallArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossCeilingArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetCeilingArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossVolume": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetVolume": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcSpace_relationships": {
+      "_total": 269,
+      "has_BoundedBy": {
+        "count": 269,
+        "pct": "100.0%"
+      },
+      "has_ContainsElements": {
+        "count": 76,
+        "pct": "28.3%"
+      },
+      "avg_BoundedBy_per_space": 11.6,
+      "avg_Contained_per_space": 2.9
+    },
+    "IfcSpace_quantities": {
+      "_total": 269,
+      "has_IfcElementQuantity": {
+        "count": 269,
+        "pct": "100.0%"
+      },
+      "has_IfcQuantityArea": {
+        "count": 269,
+        "pct": "100.0%"
+      },
+      "area_quantity_names": {
+        "GSA BIM Area": 269
+      },
+      "area_samples": [
+        [
+          "GSA BIM Area",
+          139.7546709442412
+        ],
+        [
+          "GSA BIM Area",
+          182.2801978773796
+        ],
+        [
+          "GSA BIM Area",
+          589.7555834546652
+        ],
+        [
+          "GSA BIM Area",
+          54.68369450000269
+        ],
+        [
+          "GSA BIM Area",
+          1568.118276138708
+        ]
+      ]
+    },
+    "IfcDoor_explicit": {
+      "_total": 254,
+      "Name": {
+        "count": 254,
+        "pct": "100.0%",
+        "sample": "M_Double-Flush:1730 x 2134mm:1730 x 2134mm:367888"
+      },
+      "LongName": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Description": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ObjectType": {
+        "count": 254,
+        "pct": "100.0%",
+        "sample": "1730 x 2134mm"
+      },
+      "OverallWidth": {
+        "count": 254,
+        "pct": "100.0%",
+        "sample": "1.729999999999997"
+      },
+      "OverallHeight": {
+        "count": 254,
+        "pct": "100.0%",
+        "sample": "2.133999999999999"
+      },
+      "PredefinedType": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "OperationType": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Pset_DoorCommon": {
+      "_total": 254,
+      "_has_pset": 254,
+      "_has_pset_pct": "100.0%",
+      "FireRating": {
+        "count": 254,
+        "pct": "100.0%",
+        "sample": "Fire Rating"
+      },
+      "FireExit": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "SelfClosing": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "SmokeStop": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "HandicapAccessible": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "IsExternal": {
+        "count": 254,
+        "pct": "100.0%",
+        "sample": "False"
+      },
+      "Status": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Qto_DoorBaseQuantities": {
+      "_total": 254,
+      "_has_pset": 0,
+      "_has_pset_pct": "0.0%",
+      "Width": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Height": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Area": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcDoor_relationships": {
+      "_total": 254,
+      "contained_in_space": {
+        "count": 0,
+        "pct": "0.0%"
+      },
+      "contained_in_storey": {
+        "count": 249,
+        "pct": "98.0%"
+      },
+      "fills_opening": {
+        "count": 244,
+        "pct": "96.1%"
+      }
+    },
+    "IfcBuildingStorey_explicit": {
+      "_total": 4,
+      "Name": {
+        "count": 4,
+        "pct": "100.0%",
+        "sample": "First Floor"
+      },
+      "LongName": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Description": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Elevation": {
+        "count": 4,
+        "pct": "100.0%",
+        "sample": "-3.531500425424383e-13"
+      }
+    },
+    "Pset_BuildingStoreyCommon": {
+      "_total": 4,
+      "_has_pset": 0,
+      "_has_pset_pct": "0.0%",
+      "SprinklerProtection": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "SprinklerProtectionAutomatic": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "EntranceLevel": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "AboveGround": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ElevationOfSSLRelative": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ElevationOfFFLRelative": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcDoorLiningProperties_explicit": {
+      "_total": 19,
+      "LiningThickness": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "LiningDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ThresholdThickness": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ThresholdDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "CasingThickness": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "CasingDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcDoorPanelProperties_explicit": {
+      "_total": 0
+    }
+  },
+  {
+    "file": "Duplex_Apartment_IFC2x3.ifc",
+    "schema": "IFC2X3",
+    "counts": {
+      "IfcSpace": 21,
+      "IfcBuildingStorey": 4,
+      "IfcDoor": 14,
+      "IfcDoorType": 6,
+      "IfcDoorLiningProperties": 6,
+      "IfcDoorPanelProperties": 0
+    },
+    "IfcSpace_explicit": {
+      "_total": 21,
+      "Name": {
+        "count": 21,
+        "pct": "100.0%",
+        "sample": "A101"
+      },
+      "LongName": {
+        "count": 21,
+        "pct": "100.0%",
+        "sample": "Foyer"
+      },
+      "Description": {
+        "count": 21,
+        "pct": "100.0%",
+        "sample": ""
+      },
+      "ObjectType": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "PredefinedType": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ElevationWithFlooring": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Pset_SpaceCommon": {
+      "_total": 21,
+      "_has_pset": 21,
+      "_has_pset_pct": "100.0%",
+      "IsExternal": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "PubliclyAccessible": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "HandicapAccessible": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossPlannedArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetPlannedArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Pset_SpaceOccupancyRequirements": {
+      "_total": 21,
+      "_has_pset": 0,
+      "_has_pset_pct": "0.0%",
+      "OccupancyType": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "OccupancyNumber": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "OccupancyNumberPeak": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "OccupancyTimePerDay": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "AreaPerOccupant": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "MinimumHeadroom": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Qto_SpaceBaseQuantities": {
+      "_total": 21,
+      "_has_pset": 0,
+      "_has_pset_pct": "0.0%",
+      "Height": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "FinishCeilingHeight": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "FinishFloorHeight": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossPerimeter": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetPerimeter": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossFloorArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetFloorArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossWallArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetWallArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossCeilingArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetCeilingArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossVolume": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetVolume": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcSpace_relationships": {
+      "_total": 21,
+      "has_BoundedBy": {
+        "count": 21,
+        "pct": "100.0%"
+      },
+      "has_ContainsElements": {
+        "count": 11,
+        "pct": "52.4%"
+      },
+      "avg_BoundedBy_per_space": 12.6,
+      "avg_Contained_per_space": 5.5
+    },
+    "IfcSpace_quantities": {
+      "_total": 21,
+      "has_IfcElementQuantity": {
+        "count": 21,
+        "pct": "100.0%"
+      },
+      "has_IfcQuantityArea": {
+        "count": 21,
+        "pct": "100.0%"
+      },
+      "area_quantity_names": {
+        "GSA BIM Area": 21
+      },
+      "area_samples": [
+        [
+          "GSA BIM Area",
+          17.93623674999977
+        ],
+        [
+          "GSA BIM Area",
+          7.799954699999879
+        ],
+        [
+          "GSA BIM Area",
+          3.997752000000072
+        ],
+        [
+          "GSA BIM Area",
+          17.93623674999994
+        ],
+        [
+          "GSA BIM Area",
+          7.799954699999977
+        ]
+      ]
+    },
+    "IfcDoor_explicit": {
+      "_total": 14,
+      "Name": {
+        "count": 14,
+        "pct": "100.0%",
+        "sample": "M_Single-Flush:1250mm x 2010mm:1250mm x 2010mm:146596"
+      },
+      "LongName": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Description": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ObjectType": {
+        "count": 14,
+        "pct": "100.0%",
+        "sample": "1250mm x 2010mm"
+      },
+      "OverallWidth": {
+        "count": 14,
+        "pct": "100.0%",
+        "sample": "1.25"
+      },
+      "OverallHeight": {
+        "count": 14,
+        "pct": "100.0%",
+        "sample": "2.009999999999999"
+      },
+      "PredefinedType": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "OperationType": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Pset_DoorCommon": {
+      "_total": 14,
+      "_has_pset": 14,
+      "_has_pset_pct": "100.0%",
+      "FireRating": {
+        "count": 14,
+        "pct": "100.0%",
+        "sample": "Fire Rating"
+      },
+      "FireExit": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "SelfClosing": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "SmokeStop": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "HandicapAccessible": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "IsExternal": {
+        "count": 14,
+        "pct": "100.0%",
+        "sample": "True"
+      },
+      "Status": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Qto_DoorBaseQuantities": {
+      "_total": 14,
+      "_has_pset": 0,
+      "_has_pset_pct": "0.0%",
+      "Width": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Height": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Area": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcDoor_relationships": {
+      "_total": 14,
+      "contained_in_space": {
+        "count": 0,
+        "pct": "0.0%"
+      },
+      "contained_in_storey": {
+        "count": 14,
+        "pct": "100.0%"
+      },
+      "fills_opening": {
+        "count": 14,
+        "pct": "100.0%"
+      }
+    },
+    "IfcBuildingStorey_explicit": {
+      "_total": 4,
+      "Name": {
+        "count": 4,
+        "pct": "100.0%",
+        "sample": "Level 1"
+      },
+      "LongName": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Description": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Elevation": {
+        "count": 4,
+        "pct": "100.0%",
+        "sample": "0.0"
+      }
+    },
+    "Pset_BuildingStoreyCommon": {
+      "_total": 4,
+      "_has_pset": 0,
+      "_has_pset_pct": "0.0%",
+      "SprinklerProtection": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "SprinklerProtectionAutomatic": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "EntranceLevel": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "AboveGround": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ElevationOfSSLRelative": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ElevationOfFFLRelative": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcDoorLiningProperties_explicit": {
+      "_total": 6,
+      "LiningThickness": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "LiningDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ThresholdThickness": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ThresholdDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "CasingThickness": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "CasingDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcDoorPanelProperties_explicit": {
+      "_total": 0
+    }
+  },
+  {
+    "file": "Revit_SnowdonTower_ARC_FireRating_IFC4.ifc",
+    "schema": "IFC4",
+    "counts": {
+      "IfcSpace": 0,
+      "IfcBuildingStorey": 6,
+      "IfcDoor": 16,
+      "IfcDoorType": 10,
+      "IfcDoorLiningProperties": 10,
+      "IfcDoorPanelProperties": 10
+    },
+    "IfcSpace_explicit": {
+      "_total": 0
+    },
+    "Pset_SpaceCommon": {
+      "_total": 0,
+      "_has_pset": 0
+    },
+    "Pset_SpaceOccupancyRequirements": {
+      "_total": 0,
+      "_has_pset": 0
+    },
+    "Qto_SpaceBaseQuantities": {
+      "_total": 0,
+      "_has_pset": 0
+    },
+    "IfcSpace_relationships": {
+      "_total": 0
+    },
+    "IfcSpace_quantities": {
+      "_total": 0
+    },
+    "IfcDoor_explicit": {
+      "_total": 16,
+      "Name": {
+        "count": 16,
+        "pct": "100.0%",
+        "sample": "Single-Flush:800 x 2100:422466"
+      },
+      "LongName": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Description": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ObjectType": {
+        "count": 16,
+        "pct": "100.0%",
+        "sample": "Single-Flush:800 x 2100"
+      },
+      "OverallWidth": {
+        "count": 16,
+        "pct": "100.0%",
+        "sample": "799.999999999999"
+      },
+      "OverallHeight": {
+        "count": 16,
+        "pct": "100.0%",
+        "sample": "2100.0"
+      },
+      "PredefinedType": {
+        "count": 16,
+        "pct": "100.0%",
+        "sample": "DOOR"
+      },
+      "OperationType": {
+        "count": 16,
+        "pct": "100.0%",
+        "sample": "SINGLE_SWING_LEFT"
+      }
+    },
+    "Pset_DoorCommon": {
+      "_total": 16,
+      "_has_pset": 16,
+      "_has_pset_pct": "100.0%",
+      "FireRating": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "FireExit": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "SelfClosing": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "SmokeStop": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "HandicapAccessible": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "IsExternal": {
+        "count": 16,
+        "pct": "100.0%",
+        "sample": "False"
+      },
+      "Status": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Qto_DoorBaseQuantities": {
+      "_total": 16,
+      "_has_pset": 0,
+      "_has_pset_pct": "0.0%",
+      "Width": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Height": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Area": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcDoor_relationships": {
+      "_total": 16,
+      "contained_in_space": {
+        "count": 0,
+        "pct": "0.0%"
+      },
+      "contained_in_storey": {
+        "count": 11,
+        "pct": "68.8%"
+      },
+      "fills_opening": {
+        "count": 9,
+        "pct": "56.2%"
+      }
+    },
+    "IfcBuildingStorey_explicit": {
+      "_total": 6,
+      "Name": {
+        "count": 6,
+        "pct": "100.0%",
+        "sample": "Foundation"
+      },
+      "LongName": {
+        "count": 6,
+        "pct": "100.0%",
+        "sample": "Foundation"
+      },
+      "Description": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Elevation": {
+        "count": 6,
+        "pct": "100.0%",
+        "sample": "-800.0"
+      }
+    },
+    "Pset_BuildingStoreyCommon": {
+      "_total": 6,
+      "_has_pset": 6,
+      "_has_pset_pct": "100.0%",
+      "SprinklerProtection": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "SprinklerProtectionAutomatic": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "EntranceLevel": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "AboveGround": {
+        "count": 6,
+        "pct": "100.0%",
+        "sample": "UNKNOWN"
+      },
+      "ElevationOfSSLRelative": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ElevationOfFFLRelative": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcDoorLiningProperties_explicit": {
+      "_total": 10,
+      "LiningThickness": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "LiningDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ThresholdThickness": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ThresholdDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "CasingThickness": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "CasingDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcDoorPanelProperties_explicit": {
+      "_total": 10,
+      "PanelDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "PanelWidth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "PanelOperation": {
+        "count": 10,
+        "pct": "100.0%",
+        "sample": "SWINGING"
+      },
+      "PanelPosition": {
+        "count": 10,
+        "pct": "100.0%",
+        "sample": "NOTDEFINED"
+      }
+    }
+  },
+  {
+    "file": "SampleHouse_IFC4.ifc",
+    "schema": "IFC4",
+    "counts": {
+      "IfcSpace": 4,
+      "IfcBuildingStorey": 2,
+      "IfcDoor": 3,
+      "IfcDoorType": 3,
+      "IfcDoorLiningProperties": 3,
+      "IfcDoorPanelProperties": 3
+    },
+    "IfcSpace_explicit": {
+      "_total": 4,
+      "Name": {
+        "count": 4,
+        "pct": "100.0%",
+        "sample": "1 - Living room"
+      },
+      "LongName": {
+        "count": 4,
+        "pct": "100.0%",
+        "sample": "Living room"
+      },
+      "Description": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ObjectType": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "PredefinedType": {
+        "count": 4,
+        "pct": "100.0%",
+        "sample": "SPACE"
+      },
+      "ElevationWithFlooring": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Pset_SpaceCommon": {
+      "_total": 4,
+      "_has_pset": 4,
+      "_has_pset_pct": "100.0%",
+      "IsExternal": {
+        "count": 4,
+        "pct": "100.0%",
+        "sample": "False"
+      },
+      "PubliclyAccessible": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "HandicapAccessible": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossPlannedArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetPlannedArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Pset_SpaceOccupancyRequirements": {
+      "_total": 4,
+      "_has_pset": 0,
+      "_has_pset_pct": "0.0%",
+      "OccupancyType": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "OccupancyNumber": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "OccupancyNumberPeak": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "OccupancyTimePerDay": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "AreaPerOccupant": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "MinimumHeadroom": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Qto_SpaceBaseQuantities": {
+      "_total": 4,
+      "_has_pset": 0,
+      "_has_pset_pct": "0.0%",
+      "Height": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "FinishCeilingHeight": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "FinishFloorHeight": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossPerimeter": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetPerimeter": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossFloorArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetFloorArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossWallArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetWallArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossCeilingArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetCeilingArea": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "GrossVolume": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "NetVolume": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcSpace_relationships": {
+      "_total": 4,
+      "has_BoundedBy": {
+        "count": 0,
+        "pct": "0.0%"
+      },
+      "has_ContainsElements": {
+        "count": 2,
+        "pct": "50.0%"
+      },
+      "avg_BoundedBy_per_space": 0,
+      "avg_Contained_per_space": 7.0
+    },
+    "IfcSpace_quantities": {
+      "_total": 4,
+      "has_IfcElementQuantity": {
+        "count": 4,
+        "pct": "100.0%"
+      },
+      "has_IfcQuantityArea": {
+        "count": 4,
+        "pct": "100.0%"
+      },
+      "area_quantity_names": {
+        "NetFloorArea": 4
+      },
+      "area_samples": [
+        [
+          "NetFloorArea",
+          51.9948250000001
+        ],
+        [
+          "NetFloorArea",
+          15.41678125
+        ],
+        [
+          "NetFloorArea",
+          8.69350624999999
+        ],
+        [
+          "NetFloorArea",
+          76.46551559765
+        ]
+      ]
+    },
+    "IfcDoor_explicit": {
+      "_total": 3,
+      "Name": {
+        "count": 3,
+        "pct": "100.0%",
+        "sample": "Doors_ExtDbl_Flush:1810x2110mm:285860"
+      },
+      "LongName": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Description": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ObjectType": {
+        "count": 3,
+        "pct": "100.0%",
+        "sample": "1810x2110mm"
+      },
+      "OverallWidth": {
+        "count": 3,
+        "pct": "100.0%",
+        "sample": "1810.0"
+      },
+      "OverallHeight": {
+        "count": 3,
+        "pct": "100.0%",
+        "sample": "2110.0"
+      },
+      "PredefinedType": {
+        "count": 3,
+        "pct": "100.0%",
+        "sample": "DOOR"
+      },
+      "OperationType": {
+        "count": 3,
+        "pct": "100.0%",
+        "sample": "DOUBLE_DOOR_SINGLE_SWING"
+      }
+    },
+    "Pset_DoorCommon": {
+      "_total": 3,
+      "_has_pset": 3,
+      "_has_pset_pct": "100.0%",
+      "FireRating": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "FireExit": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "SelfClosing": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "SmokeStop": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "HandicapAccessible": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "IsExternal": {
+        "count": 3,
+        "pct": "100.0%",
+        "sample": "True"
+      },
+      "Status": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "Qto_DoorBaseQuantities": {
+      "_total": 3,
+      "_has_pset": 0,
+      "_has_pset_pct": "0.0%",
+      "Width": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Height": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Area": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcDoor_relationships": {
+      "_total": 3,
+      "contained_in_space": {
+        "count": 0,
+        "pct": "0.0%"
+      },
+      "contained_in_storey": {
+        "count": 3,
+        "pct": "100.0%"
+      },
+      "fills_opening": {
+        "count": 3,
+        "pct": "100.0%"
+      }
+    },
+    "IfcBuildingStorey_explicit": {
+      "_total": 2,
+      "Name": {
+        "count": 2,
+        "pct": "100.0%",
+        "sample": "Ground Floor"
+      },
+      "LongName": {
+        "count": 2,
+        "pct": "100.0%",
+        "sample": "Ground Floor"
+      },
+      "Description": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "Elevation": {
+        "count": 2,
+        "pct": "100.0%",
+        "sample": "0.0"
+      }
+    },
+    "Pset_BuildingStoreyCommon": {
+      "_total": 2,
+      "_has_pset": 2,
+      "_has_pset_pct": "100.0%",
+      "SprinklerProtection": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "SprinklerProtectionAutomatic": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "EntranceLevel": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "AboveGround": {
+        "count": 2,
+        "pct": "100.0%",
+        "sample": "UNKNOWN"
+      },
+      "ElevationOfSSLRelative": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ElevationOfFFLRelative": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcDoorLiningProperties_explicit": {
+      "_total": 3,
+      "LiningThickness": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "LiningDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ThresholdThickness": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "ThresholdDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "CasingThickness": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "CasingDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      }
+    },
+    "IfcDoorPanelProperties_explicit": {
+      "_total": 3,
+      "PanelDepth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "PanelWidth": {
+        "count": 0,
+        "pct": "0.0%",
+        "sample": null
+      },
+      "PanelOperation": {
+        "count": 3,
+        "pct": "100.0%",
+        "sample": "SWINGING"
+      },
+      "PanelPosition": {
+        "count": 3,
+        "pct": "100.0%",
+        "sample": "NOTDEFINED"
+      }
+    }
+  }
+]
