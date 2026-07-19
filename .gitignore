@@ -20,3 +20,6 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+
+# 后端上传目录(运行时产生)
+fsb-door-check/backend/uploads/

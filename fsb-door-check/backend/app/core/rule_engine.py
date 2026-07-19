@@ -5,25 +5,31 @@
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from .presets import get_absolute_minimum_door_width_mm, table_b2_lookup
 
 RULE_SOURCE = "HK FSB 2011 (2024) Part B, Table B2 + Clause B7.1"
 
 
-def check_door(door_info: dict[str, Any], space_info: dict[str, Any],
-               preset_id: str = "hk_fsb_2011_b2_default") -> dict[str, Any]:
+def check_door(
+    door_info: dict[str, Any],
+    space_info: dict[str, Any],
+    preset_id: str = "hk_fsb_2011_b2_default",
+    override_threshold_mm: Optional[float] = None,
+    override_threshold_source: Optional[str] = None,
+) -> dict[str, Any]:
     """对单门执行检查, 返回 CheckResult(对齐 CONTRACT.md §3)。
 
-    door_info 必须含: global_id, measured_width_mm, width_source
-    space_info 必须含: capacity, capacity_source
+    override_threshold_mm 非空时, 用用户覆盖阈值替代 Table B2/B13.4 计算值,
+    status 标为 overridden(对齐 CONTRACT.md §5.2 着色优先级)。
     """
     capacity = space_info.get("capacity")
     measured = door_info.get("measured_width_mm")
     width_source = door_info.get("width_source", "unknown")
     capacity_source = space_info.get("capacity_source", "unknown")
     needs_review_default = width_source != "clear_width"
+    overridden = override_threshold_mm is not None
 
     if capacity is None:
         return _result(
@@ -33,6 +39,7 @@ def check_door(door_info: dict[str, Any], space_info: dict[str, Any],
             reason="cannot derive occupant capacity",
             rule_clause="B7.1",
             human_review_notes=["capacity unknown, user input or use_class override required"],
+            overridden=False,
         )
 
     if capacity == 0:
@@ -43,81 +50,80 @@ def check_door(door_info: dict[str, Any], space_info: dict[str, Any],
             reason="space excluded from capacity (toilet/corridor/stair/lift), Table B2 not applicable",
             rule_clause="N/A",
             human_review_notes=[],
+            overridden=False,
         )
 
     if capacity <= 3:
-        abs_min = get_absolute_minimum_door_width_mm()  # 750
-        threshold_source = "Clause B13.4 (absolute minimum, capacity<=3)"
-        if measured is None:
+        base_threshold = float(get_absolute_minimum_door_width_mm())
+        base_source = "Clause B13.4 (absolute minimum, capacity<=3)"
+        rule_clause = "B13.4"
+    else:
+        row = table_b2_lookup(capacity)
+        if row is None or row.get("min_width_per_door_mm") is None:
             return _result(
-                door_info, preset_id, "unknown", abs_min, threshold_source,
+                door_info, preset_id, "unknown", None,
+                "BA case-by-case approval (capacity>3000)",
                 measured, None, capacity, capacity_source, width_source,
                 needs_human_review=True,
-                reason=f"capacity={capacity}<=3, B13.4 requires {abs_min}mm, but width unknown",
-                rule_clause="B13.4",
-                human_review_notes=["width unknown, verify in model"],
+                reason=f"capacity={capacity}>3000, requires Building Authority case-by-case approval",
+                rule_clause="B7.1",
+                human_review_notes=["capacity>3000, BA approval required"],
+                overridden=False,
             )
-        if measured >= abs_min:
-            return _result(
-                door_info, preset_id, "pass", abs_min, threshold_source,
-                measured, None, capacity, capacity_source, width_source,
-                needs_human_review=needs_review_default,
-                reason=f"capacity={capacity}<=3, B13.4 absolute minimum {abs_min}mm satisfied (measured {measured}mm)",
-                rule_clause="B13.4",
-                human_review_notes=_width_review_notes(width_source),
-            )
-        deficit = abs_min - measured
-        return _result(
-            door_info, preset_id, "fail", abs_min, threshold_source,
-            measured, deficit, capacity, capacity_source, width_source,
-            needs_human_review=True,
-            reason=f"capacity={capacity}<=3, B13.4 requires {abs_min}mm, measured {measured}mm, deficit {deficit}mm",
-            rule_clause="B13.4",
-            human_review_notes=_width_review_notes(width_source),
-        )
+        base_threshold = float(row["min_width_per_door_mm"])
+        base_source = f"Table B2 row[{row['capacity_min']}-{row['capacity_max']}]"
+        rule_clause = "B7.1"
 
-    row = table_b2_lookup(capacity)
-    if row is None or row.get("min_width_per_door_mm") is None:
-        return _result(
-            door_info, preset_id, "unknown", None,
-            "BA case-by-case approval (capacity>3000)",
-            measured, None, capacity, capacity_source, width_source,
-            needs_human_review=True,
-            reason=f"capacity={capacity}>3000, requires Building Authority case-by-case approval",
-            rule_clause="B7.1",
-            human_review_notes=["capacity>3000, BA approval required"],
-        )
-
-    threshold = row["min_width_per_door_mm"]
-    threshold_source = f"Table B2 row[{row['capacity_min']}-{row['capacity_max']}]"
+    if overridden:
+        threshold = float(override_threshold_mm)
+        threshold_source = override_threshold_source or "user_override"
+    else:
+        threshold = base_threshold
+        threshold_source = base_source
 
     if measured is None:
         return _result(
             door_info, preset_id, "unknown", threshold, threshold_source,
             measured, None, capacity, capacity_source, width_source,
             needs_human_review=True,
-            reason=f"capacity={capacity}, Table B2 requires {threshold}mm, but width unknown",
-            rule_clause="B7.1",
+            reason=_reason(capacity, threshold, None, overridden),
+            rule_clause=rule_clause,
             human_review_notes=["width unknown, verify in model"],
+            overridden=overridden,
         )
+
     if measured >= threshold:
+        status = "overridden" if overridden else "pass"
         return _result(
-            door_info, preset_id, "pass", threshold, threshold_source,
+            door_info, preset_id, status, threshold, threshold_source,
             measured, None, capacity, capacity_source, width_source,
-            needs_human_review=needs_review_default,
-            reason=f"capacity={capacity}, Table B2 requires {threshold}mm, measured {measured}mm",
-            rule_clause="B7.1",
+            needs_human_review=needs_review_default or overridden,
+            reason=_reason(capacity, threshold, measured, overridden, passed=True),
+            rule_clause=rule_clause,
             human_review_notes=_width_review_notes(width_source),
+            overridden=overridden,
         )
+
     deficit = threshold - measured
+    status = "overridden" if overridden else "fail"
     return _result(
-        door_info, preset_id, "fail", threshold, threshold_source,
+        door_info, preset_id, status, threshold, threshold_source,
         measured, deficit, capacity, capacity_source, width_source,
         needs_human_review=True,
-        reason=f"capacity={capacity}, Table B2 requires {threshold}mm, measured {measured}mm, deficit {deficit}mm",
-        rule_clause="B7.1",
+        reason=_reason(capacity, threshold, measured, overridden, passed=False, deficit=deficit),
+        rule_clause=rule_clause,
         human_review_notes=_width_review_notes(width_source),
+        overridden=overridden,
     )
+
+
+def _reason(capacity, threshold, measured, overridden, passed=None, deficit=None) -> str:
+    ov_tag = " [user override]" if overridden else ""
+    if measured is None:
+        return f"capacity={capacity}, requires {threshold}mm{ov_tag}, but width unknown"
+    if passed:
+        return f"capacity={capacity}, requires {threshold}mm{ov_tag}, measured {measured}mm -> pass"
+    return f"capacity={capacity}, requires {threshold}mm{ov_tag}, measured {measured}mm, deficit {deficit}mm -> fail"
 
 
 def _width_review_notes(width_source: str) -> list[str]:
@@ -128,7 +134,8 @@ def _width_review_notes(width_source: str) -> list[str]:
 
 def _result(door_info, preset_id, status, threshold_mm, threshold_source,
             measured_mm, deficit_mm, capacity, capacity_source, width_source,
-            needs_human_review, reason, rule_clause, human_review_notes) -> dict[str, Any]:
+            needs_human_review, reason, rule_clause, human_review_notes,
+            overridden=False) -> dict[str, Any]:
     return {
         "door_global_id": door_info["global_id"],
         "preset_id": preset_id,
@@ -144,6 +151,6 @@ def _result(door_info, preset_id, status, threshold_mm, threshold_source,
         "width_source": width_source,
         "needs_human_review": needs_human_review,
         "reason": reason,
-        "overridden": False,
+        "overridden": overridden,
         "human_review_notes": human_review_notes,
     }
