@@ -15,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from .api import routes_check, routes_model, routes_override, routes_presets
+from .api import routes_check, routes_export, routes_model, routes_override, routes_presets
 
 mimetypes.add_type("application/wasm", ".wasm")
 mimetypes.add_type("text/javascript", ".mjs")
@@ -38,6 +38,7 @@ app.include_router(routes_model.router)
 app.include_router(routes_check.router)
 app.include_router(routes_override.router)
 app.include_router(routes_presets.router)
+app.include_router(routes_export.router)
 
 
 @app.get("/health")
@@ -58,6 +59,7 @@ def api_info():
             "POST /override/{sid}",
             "GET /presets",
             "GET /presets/{sid}",
+            "POST /export/{sid}?format=bcf|html|json (501 — designed, not implemented)",
         ],
     }
 

@@ -248,6 +248,31 @@ export class IfcViewer {
     }
   }
 
+  focusDoors(doorGlobalIds) {
+    const focusSet = new Set(doorGlobalIds);
+    const objects = this.viewer.scene.objects;
+    for (const id in objects) {
+      const obj = objects[id];
+      if (this._doorIds.has(id)) {
+        if (focusSet.size === 0) {
+          obj.xrayed = false;
+        } else if (focusSet.has(id)) {
+          obj.xrayed = false;
+        } else {
+          obj.xrayed = true;
+          if (obj.xrayMaterial) obj.xrayMaterial.alpha = 0.15;
+        }
+      } else {
+        if (focusSet.size === 0) {
+          if (obj.xrayMaterial) obj.xrayMaterial.alpha = 0.5;
+        } else {
+          obj.xrayed = true;
+          if (obj.xrayMaterial) obj.xrayMaterial.alpha = 0.85;
+        }
+      }
+    }
+  }
+
   showAllStoreys() {
     const objects = this.viewer.scene.objects;
     for (const id in objects) {

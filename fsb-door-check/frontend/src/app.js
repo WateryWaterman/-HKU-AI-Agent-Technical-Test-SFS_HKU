@@ -19,6 +19,10 @@ window.addEventListener('alpine:init', () => {
     filterStoreyId: null,
     failCursor: 0,
     unknownCursor: 0,
+    thrEditRowIdx: 0,
+    thrEditWidthMm: '',
+    exportMsg: null,
+    exportMsgKind: 'info',
 
     init() {
       this.$nextTick(() => {
@@ -52,15 +56,35 @@ window.addEventListener('alpine:init', () => {
       if (this.filterStatus !== 'all') {
         list = list.filter(d => d.check_result && d.check_result.status === this.filterStatus);
       }
+      if (this.filterStoreyId) {
+        list = list.filter(d => d.storey_global_id === this.filterStoreyId);
+      }
       return list;
     },
 
     get failsList() {
-      return this.doors.filter(d => d.check_result && d.check_result.status === 'fail');
+      let list = this.doors.filter(d => d.check_result && d.check_result.status === 'fail');
+      if (this.filterStoreyId) list = list.filter(d => d.storey_global_id === this.filterStoreyId);
+      return list;
     },
 
     get unknownsList() {
-      return this.doors.filter(d => d.check_result && d.check_result.status === 'unknown');
+      let list = this.doors.filter(d => d.check_result && d.check_result.status === 'unknown');
+      if (this.filterStoreyId) list = list.filter(d => d.storey_global_id === this.filterStoreyId);
+      return list;
+    },
+
+    get storeyDoorCounts() {
+      const m = {};
+      for (const d of this.doors) {
+        if (d.storey_global_id) m[d.storey_global_id] = (m[d.storey_global_id] || 0) + 1;
+      }
+      return m;
+    },
+
+    get currentThresholdRow() {
+      const rows = this.presets?.default?.table_b2_thresholds || [];
+      return rows[this.thrEditRowIdx] || null;
     },
 
     get selectedDoor() {
@@ -210,9 +234,75 @@ window.addEventListener('alpine:init', () => {
           return this.model;
         });
         this.applyCheckColors();
+        if (this.filterStoreyId) this._focusStoreyInViewer(this.filterStoreyId);
       } catch (e) {
         this.error = e.message;
       }
+    },
+
+    async applyThresholdEdit() {
+      const row = this.currentThresholdRow;
+      if (!row) return;
+      const w = parseFloat(this.thrEditWidthMm);
+      if (isNaN(w) || w <= 0) {
+        this.error = 'Invalid width (must be a positive number in mm).';
+        return;
+      }
+      this.loading = true;
+      this.loadingMsg = `Applying threshold override (${row.capacity_min}-${row.capacity_max ?? '∞'}) → ${w}mm...`;
+      try {
+        await this.overrideThreshold(row.capacity_min, row.capacity_max, w);
+        this.thrEditWidthMm = '';
+      } finally {
+        this.loading = false;
+        this.loadingMsg = '';
+      }
+    },
+
+    selectStoreyFilter(storeyGid) {
+      this.filterStoreyId = (storeyGid === '' || storeyGid === null) ? null : storeyGid;
+      if (this.filterStoreyId) this._focusStoreyInViewer(this.filterStoreyId);
+      else if (this.viewer) this.viewer.focusDoors([]);
+    },
+
+    _focusStoreyInViewer(storeyGid) {
+      if (!this.viewer) return;
+      const doorIds = this.doors
+        .filter(d => d.storey_global_id === storeyGid)
+        .map(d => d.global_id);
+      this.viewer.focusDoors(doorIds);
+    },
+
+    async exportModel(format) {
+      if (!this.sessionId) return;
+      this.exportMsg = null;
+      this.loading = true;
+      this.loadingMsg = `Requesting ${format.toUpperCase()} export...`;
+      try {
+        await api.exportModel(this.sessionId, format);
+        this.exportMsg = `${format.toUpperCase()} export completed (unexpected — MVP returns 501).`;
+        this.exportMsgKind = 'info';
+      } catch (e) {
+        if (e.status === 501) {
+          this.exportMsg = `${format.toUpperCase()} export is designed but not implemented in MVP. ` +
+            `See docs/EXPORT_DESIGN.md (BCF → Revit/Solibri; HTML → email; JSON → CI/LLM).`;
+          this.exportMsgKind = 'warn';
+        } else {
+          this.error = e.message;
+        }
+      } finally {
+        this.loading = false;
+        this.loadingMsg = '';
+      }
+    },
+
+    resetView() {
+      if (!this.viewer) return;
+      this.filterStoreyId = null;
+      this.viewer.focusDoors([]);
+      try {
+        this.viewer.cameraFlight.flyTo(this.viewer.scene);
+      } catch (e) { /* ignore */ }
     },
 
     _refreshDoorsOfSpace(spaceGid) {

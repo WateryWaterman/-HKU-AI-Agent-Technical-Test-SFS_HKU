@@ -33,7 +33,11 @@ class TestBasic:
     def test_root(self):
         r = client.get("/")
         assert r.status_code == 200
-        assert "endpoints" in r.json()
+        assert "text/html" in r.headers.get("content-type", "")
+        # /api returns the endpoint listing (JSON)
+        r2 = client.get("/api")
+        assert r2.status_code == 200
+        assert "endpoints" in r2.json()
 
     def test_presets(self):
         r = client.get("/presets")
@@ -227,6 +231,52 @@ class TestEndToEnd:
             assert r4.json()["door"]["is_fire_exit"] is True
 
         print(f"\n  Duplex end-to-end OK: {data['counts']} summary={data['summary']['by_status']}")
+
+
+class TestExport:
+    """导出端点 MVP 返回 501(设计文档先行)。"""
+
+    def test_export_bcf_returns_501(self):
+        with open(DUPLEX, "rb") as f:
+            r = client.post(
+                "/model/upload",
+                files={"file": ("Duplex_Apartment_IFC2x3.ifc", f, "application/octet-stream")},
+            )
+        sid = r.json()["session_id"]
+        r2 = client.post(f"/export/{sid}", params={"format": "bcf"})
+        assert r2.status_code == 501
+        detail = r2.json()["detail"]
+        assert detail["error"] == "export_not_implemented"
+        assert detail["requested_format"] == "bcf"
+        assert detail["design_doc"] == "docs/EXPORT_DESIGN.md"
+        assert "planned_formats" in detail
+
+    def test_export_html_and_json_return_501(self):
+        with open(DUPLEX, "rb") as f:
+            r = client.post(
+                "/model/upload",
+                files={"file": ("Duplex_Apartment_IFC2x3.ifc", f, "application/octet-stream")},
+            )
+        sid = r.json()["session_id"]
+        for fmt in ("html", "json"):
+            r2 = client.post(f"/export/{sid}", params={"format": fmt})
+            assert r2.status_code == 501, f"{fmt} should return 501"
+            assert r2.json()["detail"]["requested_format"] == fmt
+
+    def test_export_invalid_format_returns_400(self):
+        with open(DUPLEX, "rb") as f:
+            r = client.post(
+                "/model/upload",
+                files={"file": ("Duplex_Apartment_IFC2x3.ifc", f, "application/octet-stream")},
+            )
+        sid = r.json()["session_id"]
+        r2 = client.post(f"/export/{sid}", params={"format": "pdf"})
+        assert r2.status_code == 400
+        assert r2.json()["detail"]["error"] == "invalid_format"
+
+    def test_export_unknown_session_returns_404(self):
+        r = client.post("/export/does-not-exist", params={"format": "bcf"})
+        assert r.status_code == 404
 
 
 if __name__ == "__main__":
