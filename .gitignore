@@ -12,3 +12,11 @@ research/IFC4x3_DEV-build_NOT-normative/
 # 系统杂项
 .DS_Store
 Thumbs.db
+
+# Python 缓存
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
