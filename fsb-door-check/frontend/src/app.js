@@ -35,6 +35,11 @@ window.addEventListener('alpine:init', () => {
           this.error = `init failed: ${e.message}. If xeokit CDN issue, check F12 console.`;
         }
       });
+      window.addEventListener('beforeunload', () => {
+        if (this.sessionId) {
+          api.deleteSession(this.sessionId);
+        }
+      });
     },
 
     async loadPresets() {
@@ -99,20 +104,39 @@ window.addEventListener('alpine:init', () => {
         this.error = 'Viewer not initialized. Check F12 console for xeokit errors.';
         return;
       }
+      if (this.sessionId) {
+        try { await api.deleteSession(this.sessionId); } catch (e) { /* ignore */ }
+        this.sessionId = null;
+      }
       this.loading = true;
       this.loadingMsg = `Uploading ${file.name}...`;
       this.error = null;
+      this.exportMsg = null;
       try {
         this.model = await api.uploadIfc(file);
         this.sessionId = this.model.session_id;
         this.loadingMsg = 'Loading 3D geometry...';
         const buffer = await file.arrayBuffer();
-        await this.viewer.loadIfcArrayBuffer(buffer);
+        await this.viewer.loadIfcArrayBuffer(buffer, {
+          normalizeFallback: true,
+          fetchNormalized: async () => {
+            this.loadingMsg = 'Primary load failed — re-encoding via ifcopenshell...';
+            return api.normalizeIfc(file);
+          },
+        });
         this.viewer.setNonDoorsXrayed(0.5);
         this.applyCheckColors();
         this.activeTab = 'results';
       } catch (e) {
-        this.error = e.message;
+        const msg = String(e.message || e);
+        if (msg.includes('primary load failed') || msg.includes('model load error') || msg.includes('normalize')) {
+          this.error = 'Failed to load IFC in 3D viewer even after ifcopenshell re-encode. ' +
+            'The file may use an old/proprietary STEP variant that web-ifc@0.0.51 cannot parse. ' +
+            'Backend analysis still worked (sidebar data is valid). ' +
+            'Try samples/Duplex_xeokit.ifc or samples/Clinic_Architectural_IFC2x3.ifc for 3D viewing.';
+        } else {
+          this.error = msg;
+        }
       } finally {
         this.loading = false;
         this.loadingMsg = '';

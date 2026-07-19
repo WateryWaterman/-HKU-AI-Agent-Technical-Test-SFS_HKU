@@ -52,6 +52,25 @@ export const api = {
     return r.json();
   },
 
+  async normalizeIfc(file) {
+    const fd = new FormData();
+    fd.append('file', file);
+    const r = await fetch(`${API_BASE}/model/normalize`, { method: 'POST', body: fd });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: r.statusText }));
+      throw new Error(err.detail || `normalize failed (${r.status})`);
+    }
+    return r.arrayBuffer();
+  },
+
+  async deleteSession(sessionId) {
+    try {
+      await fetch(`${API_BASE}/model/${sessionId}`, { method: 'DELETE' });
+    } catch (e) {
+      console.warn('[api] deleteSession failed (ignored on unload):', e);
+    }
+  },
+
   async exportModel(sessionId, format) {
     const r = await fetch(`${API_BASE}/export/${sessionId}?format=${encodeURIComponent(format)}`, { method: 'POST' });
     if (!r.ok) {

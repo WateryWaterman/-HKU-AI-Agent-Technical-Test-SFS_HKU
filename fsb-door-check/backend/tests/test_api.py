@@ -279,5 +279,52 @@ class TestExport:
         assert r.status_code == 404
 
 
+class TestNormalizeAndCleanup:
+    """POST /model/normalize(ifcopenshell 重写)+ DELETE /model/{sid}。"""
+
+    def test_normalize_returns_ifc_bytes(self):
+        with open(DUPLEX, "rb") as f:
+            r = client.post(
+                "/model/normalize",
+                files={"file": ("Duplex_Apartment_IFC2x3.ifc", f, "application/octet-stream")},
+            )
+        assert r.status_code == 200
+        data = r.content
+        assert data.startswith(b"ISO-10303-21")
+        assert b"FILE_SCHEMA" in data
+        assert b"IFC2X3" in data
+        assert len(data) > 1_000_000
+        # content-type 应是 octet-stream(非 JSON)
+        ct = r.headers.get("content-type", "")
+        assert "octet-stream" in ct or "text/plain" in ct
+
+    def test_normalize_rejects_non_ifc(self):
+        r = client.post(
+            "/model/normalize",
+            files={"file": ("test.txt", b"hello", "text/plain")},
+        )
+        assert r.status_code == 400
+        assert r.json()["detail"]["error"] == "invalid_file"
+
+    def test_delete_session_cleans_up(self):
+        with open(DUPLEX, "rb") as f:
+            r = client.post(
+                "/model/upload",
+                files={"file": ("Duplex_Apartment_IFC2x3.ifc", f, "application/octet-stream")},
+            )
+        sid = r.json()["session_id"]
+        r2 = client.delete(f"/model/{sid}")
+        assert r2.status_code == 200
+        assert r2.json()["ok"] is True
+        # 删除后再访问应 404
+        r3 = client.get(f"/model/{sid}/summary")
+        assert r3.status_code == 404
+
+    def test_delete_unknown_session_returns_ok(self):
+        r = client.delete("/model/does-not-exist")
+        assert r.status_code == 200
+        assert r.json()["ok"] is True
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])

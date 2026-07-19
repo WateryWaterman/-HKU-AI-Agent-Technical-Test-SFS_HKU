@@ -58,8 +58,21 @@ export class IfcViewer {
     return this._webIfcApiPromise;
   }
 
-  async loadIfcArrayBuffer(buffer) {
-    console.log('[viewer] loadIfcArrayBuffer start, bytes=', buffer.byteLength);
+  _destroyCurrentModel() {
+    if (this._currentModel) {
+      try {
+        this._currentModel.destroy();
+        console.log('[viewer] destroyed previous model');
+      } catch (e) {
+        console.warn('[viewer] destroy previous model failed:', e);
+      }
+      this._currentModel = null;
+    }
+    this._doorIds = new Set();
+    this._storeyIds = new Set();
+  }
+
+  async _loadModelBuffer(buffer, { label = 'primary' } = {}) {
     const ifcAPI = await this._ensureWebIfcApi();
     let webIFCLoader;
     try {
@@ -67,46 +80,68 @@ export class IfcViewer {
         WebIFC,
         IfcAPI: ifcAPI,
       });
-      console.log('[viewer] WebIFCLoaderPlugin created (WebIFC + IfcAPI injected)');
+      console.log(`[viewer] WebIFCLoaderPlugin created (${label})`);
     } catch (e) {
       console.error('[viewer] WebIFCLoaderPlugin ctor failed:', e);
       throw new Error(`WebIFCLoaderPlugin ctor: ${e.message || e}`);
     }
+    const modelId = `ifcModel_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     let model;
     try {
-      model = webIFCLoader.load({ id: 'ifcModel', ifc: buffer, edges: true });
-      console.log('[viewer] load() returned, typeof=', typeof model,
+      model = webIFCLoader.load({ id: modelId, ifc: buffer, edges: true });
+      console.log(`[viewer] load() returned (${label}), id=${modelId}, typeof=`, typeof model,
         'isPromise=', !!(model && typeof model.then === 'function'),
         'hasOn=', !!(model && typeof model.on === 'function'),
         'loaded=', !!(model && model.loaded));
     } catch (e) {
-      console.error('[viewer] load() threw:', e);
+      console.error(`[viewer] load() threw (${label}):`, e);
       throw new Error(`WebIFCLoaderPlugin.load threw: ${e.message || e}`);
     }
-    if (model && typeof model.then === 'function') {
-      console.log('[viewer] awaiting model promise...');
-      try {
+    try {
+      if (model && typeof model.then === 'function') {
         await model;
-        console.log('[viewer] await model done');
-      } catch (e) {
-        console.error('[viewer] await model failed:', e);
-        throw new Error(`await model: ${e.message || e}`);
-      }
-    } else if (model && typeof model.on === 'function') {
-      console.log('[viewer] waiting for model.on("loaded")...');
-      await new Promise((resolve, reject) => {
-        let settled = false;
-        const done = () => { if (!settled) { settled = true; resolve(); } };
-        if (model.loaded) { console.log('[viewer] model already loaded'); done(); return; }
-        model.on('loaded', () => { console.log('[viewer] model loaded event'); done(); });
-        model.on('error', (err) => {
-          console.error('[viewer] model error event:', err);
-          if (!settled) { settled = true; reject(new Error(`model load error: ${err}`)); }
+      } else if (model && typeof model.on === 'function') {
+        await new Promise((resolve, reject) => {
+          let settled = false;
+          const done = () => { if (!settled) { settled = true; resolve(); } };
+          if (model.loaded) { done(); return; }
+          model.on('loaded', () => { console.log(`[viewer] model loaded event (${label})`); done(); });
+          model.on('error', (err) => {
+            console.error(`[viewer] model error event (${label}):`, err);
+            if (!settled) { settled = true; reject(new Error(`model load error: ${err}`)); }
+          });
+          setTimeout(() => { if (!settled) { console.warn(`[viewer] load timeout 60s (${label}), continuing`); done(); } }, 60000);
         });
-        setTimeout(() => { if (!settled) { console.warn('[viewer] load timeout 60s, continuing'); done(); } }, 60000);
-      });
-    } else {
-      console.warn('[viewer] model is neither Promise nor EventEmitter, assuming sync load');
+      } else {
+        console.warn(`[viewer] model is neither Promise nor EventEmitter (${label}), assuming sync load`);
+      }
+      this._currentModel = model;
+      return model;
+    } catch (e) {
+      if (model) {
+        try { model.destroy(); } catch (_) { /* ignore */ }
+      }
+      throw e;
+    }
+  }
+
+  async loadIfcArrayBuffer(buffer, { normalizeFallback = true, fetchNormalized } = {}) {
+    console.log('[viewer] loadIfcArrayBuffer start, bytes=', buffer.byteLength,
+      'fallback=', normalizeFallback);
+    this._destroyCurrentModel();
+    try {
+      await this._loadModelBuffer(buffer, { label: 'primary' });
+    } catch (primaryErr) {
+      console.error('[viewer] primary load failed:', primaryErr.message || primaryErr);
+      this._destroyCurrentModel();
+      if (!normalizeFallback || !fetchNormalized) {
+        throw primaryErr;
+      }
+      console.log('[viewer] falling back to backend normalize (ifcopenshell rewrite)...');
+      const normBuffer = await fetchNormalized();
+      console.log('[viewer] normalize buffer received, bytes=', normBuffer.byteLength);
+      this._destroyCurrentModel();
+      await this._loadModelBuffer(normBuffer, { label: 'normalized' });
     }
     try {
       this._indexDoorsAndStoreys();
@@ -124,7 +159,7 @@ export class IfcViewer {
       console.warn('[viewer] flyTo error:', e);
     }
     const objCount = Object.keys(this.viewer.scene.objects).length;
-    console.log('[viewer] loadIfcUrl done, scene.objects count=', objCount);
+    console.log('[viewer] loadIfcArrayBuffer done, scene.objects count=', objCount);
     if (objCount === 0) {
       console.error('[viewer] WARNING: no objects in scene after load — IFC parsing likely failed');
     }
