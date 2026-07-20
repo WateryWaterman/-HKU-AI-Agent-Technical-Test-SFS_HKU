@@ -199,6 +199,122 @@ class TestOverride:
         assert r.status_code == 400
 
 
+# ============ Override 字段名修复回归 (capacity not occupant_capacity) ============
+
+class TestOverrideFix:
+    """验证 override space_use / occupancy 后 capacity 字段真正更新,
+    且 check_door 读到新值, status 从 non_passage 变为 pass/fail。"""
+
+    @pytest.fixture(scope="class")
+    def clinic_session(self):
+        with open(CLINIC, "rb") as f:
+            r = client.post(
+                "/model/upload",
+                files={"file": ("Clinic_Architectural_IFC2x3.ifc", f, "application/octet-stream")},
+            )
+        return r.json()
+
+    def _find_excluded_space_with_door(self, session):
+        """找一个 capacity=0/excluded 且有门关联的空间。"""
+        sid = session["session_id"]
+        for sp in session["spaces"]:
+            if sp.get("capacity_source") == "excluded" and sp.get("capacity") == 0:
+                for d in session["doors"]:
+                    if d.get("space_global_id") == sp["global_id"]:
+                        return sp, d
+        return None, None
+
+    def test_override_occupancy_changes_capacity_and_status(self, clinic_session):
+        """override occupancy → space['capacity'] 更新 → door status 从 non_passage 变为 pass/fail。"""
+        sid = clinic_session["session_id"]
+        sp, door = self._find_excluded_space_with_door(clinic_session)
+        assert sp is not None, "no excluded space with door found in Clinic sample"
+        gid = sp["global_id"]
+
+        # 确认 override 前是 non_passage
+        assert door["check_result"]["status"] == "non_passage"
+        assert door["check_result"]["capacity_source"] == "excluded"
+
+        # override capacity = 10
+        r = client.post(f"/override/{sid}", json={
+            "type": "occupancy",
+            "global_id": gid,
+            "value": 10,
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert len(data["affected_results"]) >= 1
+
+        # 验证 affected_results 里的 status 不再是 non_passage
+        for cr in data["affected_results"]:
+            if cr["door_global_id"] == door["global_id"]:
+                assert cr["status"] in ("pass", "fail"), f"expected pass/fail, got {cr['status']}"
+                assert cr["occupant_capacity"] == 10
+                assert cr["capacity_source"] == "user_input"
+                break
+        else:
+            pytest.fail("door not found in affected_results")
+
+        # 验证 space dict 的 capacity 字段更新
+        r2 = client.get(f"/doors/{door['global_id']}", params={"session": sid})
+        space = r2.json()["related_space"]
+        assert space["capacity"] == 10
+        assert space["capacity_source"] == "user_input"
+
+    def test_override_space_use_changes_capacity_and_status(self, clinic_session):
+        """override space_use on excluded space → capacity 从 0 变为 >0 → status 变为 pass/fail。"""
+        sid = clinic_session["session_id"]
+        sp, door = self._find_excluded_space_with_door(clinic_session)
+        assert sp is not None
+        gid = sp["global_id"]
+
+        # override use_class = 4a (office, factor=9, area_per_person_m2)
+        r = client.post(f"/override/{sid}", json={
+            "type": "space_use",
+            "global_id": gid,
+            "value": "4a",
+        })
+        assert r.status_code == 200
+        data = r.json()
+        assert len(data["affected_results"]) >= 1
+
+        # 验证 space dict
+        r2 = client.get(f"/doors/{door['global_id']}", params={"session": sid})
+        space = r2.json()["related_space"]
+        assert space["use_class"] == "4a"
+        assert space["use_class_source"] == "user_override"
+        assert space["capacity_source"] == "table_b1_factor"
+        assert space["capacity"] is not None and space["capacity"] > 0
+        assert space.get("use_class_note") is None  # cleared
+        assert space["use_class_confidence"] == "high"
+
+        # 验证 door status 不再是 non_passage
+        for cr in data["affected_results"]:
+            if cr["door_global_id"] == door["global_id"]:
+                assert cr["status"] in ("pass", "fail"), f"expected pass/fail, got {cr['status']}"
+                break
+
+    def test_override_space_use_bedspaces_sets_capacity_none(self, clinic_session):
+        """override use_class = 2 (hotels, bedspaces) → capacity = None (needs manual count)。"""
+        sid = clinic_session["session_id"]
+        sp, door = self._find_excluded_space_with_door(clinic_session)
+        assert sp is not None
+        gid = sp["global_id"]
+
+        r = client.post(f"/override/{sid}", json={
+            "type": "space_use",
+            "global_id": gid,
+            "value": "2",
+        })
+        assert r.status_code == 200
+        r2 = client.get(f"/doors/{door['global_id']}", params={"session": sid})
+        space = r2.json()["related_space"]
+        assert space["use_class"] == "2"
+        assert space["factor_type"] == "bedspaces"
+        assert space["capacity"] is None
+        assert "bedspaces" in space["capacity_source"]
+
+
 # ============ 端到端: 上传 → 检查 → 覆盖 → 重算 ============
 
 class TestEndToEnd:

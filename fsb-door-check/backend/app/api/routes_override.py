@@ -174,13 +174,24 @@ def _override_space_use(s: Session, req: OverrideRequest) -> list[dict[str, Any]
     space["use_class"] = str(req.value)
     space["use_class_source"] = "user_override"
     space["use_class_accommodation"] = factor_info.get("accommodation") if factor_info else None
+    space["use_class_confidence"] = "high"
+    space["use_class_note"] = None
     if factor_info:
         space["factor"] = factor_info["factor"]
         space["factor_type"] = factor_info["factor_type"]
-        if factor_info["factor_type"] == "area_per_person_m2" and space.get("area_m2"):
-            cap, _ = compute_capacity(space["area_m2"], factor_info["factor"], factor_info["factor_type"])
-            space["occupant_capacity"] = cap
+        cap, cap_detail = compute_capacity(
+            space.get("area_m2"), factor_info["factor"], factor_info["factor_type"])
+        if cap is not None:
+            space["capacity"] = cap
             space["capacity_source"] = "table_b1_factor"
+        else:
+            space["capacity"] = None
+            space["capacity_source"] = cap_detail
+    else:
+        space["factor"] = None
+        space["factor_type"] = "unknown"
+        space["capacity"] = None
+        space["capacity_source"] = "unknown"
     return _recheck_doors_of_space(s, req.global_id, space)
 
 
@@ -189,7 +200,7 @@ def _override_occupancy(s: Session, req: OverrideRequest) -> list[dict[str, Any]
     space = s.find_space(req.global_id)
     if not space:
         return []
-    space["occupant_capacity"] = int(req.value)
+    space["capacity"] = int(req.value)
     space["capacity_source"] = "user_input"
     return _recheck_doors_of_space(s, req.global_id, space)
 

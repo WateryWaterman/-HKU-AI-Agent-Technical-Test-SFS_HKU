@@ -68,7 +68,12 @@ interface Door {
   space_global_id_other: string | null;  // 跨两空间时的另一侧
   is_fire_exit: boolean;             // 是否疏散门 (推断或用户标)
   fire_exit_source: FireExitSource;  // 疏散门来源标签, 见 §6.5
-  is_double_leaf: boolean | null;    // 是否双扇 (IfcDoorPanelProperties, MVP 可不实现)
+  is_double_leaf: boolean | null;    // 是否双扇门(2026-07-20 已实现, 见下方 double_leaf_source)
+  double_leaf_source: string;        // "operation_type_occurrence" | "operation_type_type" | "unknown"
+                                      // 取 IfcDoor.OperationType 或经 IsTypedBy/IsDefinedByType
+                                      // 关联 IfcDoorType/IfcDoorStyle.OperationType, 前缀
+                                      // "DOUBLE_DOOR" 才判定为双扇(注意与单扇双向摆动的
+                                      // DOUBLE_SWING_LEFT/RIGHT 区分, 详见 app/core/door_leaf.py)
   // 检查结果(检查后填充, 上传时为 null)
   check_result: CheckResult | null;
 }
@@ -94,24 +99,41 @@ interface CheckResult {
   width_source: WidthSource;
   needs_human_review: boolean;
   reason: string;                  // 人类可读的原因, 如 "OverallWidth 900mm < threshold 1050mm"
-  overridden: boolean;             // 是否因用户覆盖阈值/用途/人数而重算
+  has_threshold_override: boolean; // 是否因用户覆盖阈值而重算(叠加标记, 不是独立 status)
   human_review_notes: string[];    // 待人工复核项列表
 }
 
-type CheckStatus = "pass" | "fail" | "unknown" | "overridden";
+type CheckStatus = "pass" | "fail" | "non_passage";
 ```
+
+> **2026-07-20 修正**: 本节此前文档过的 `status ∈ {pass, fail, unknown, overridden}`
+> 四态设计与实际实现不符, 现已按代码行为改写(实现从未变过, 只是文档滞后)。
+> 实际设计意图(与后端/前端代码一致):
+> - 后端 `status` 只有三态: `pass` / `fail` / `non_passage`。
+> - "未检查"(门还没跑过 check, `check_result == null`)是前端概念, 不是 status 值。
+> - 前端 UI 把 `check_result == null` 和 `status == "non_passage"` 一起归入
+>   用户可见的"待复核 / unknown"分组(见 `frontend/src/app.js` 的 `unknownsList`
+>   / `nextUnknown()`), 但这只是 UI 呈现层的分组标签, 不代表后端多出一个
+>   `unknown` 状态值。
+> - `overridden` 不是独立 status, 是 `has_threshold_override: boolean`
+>   叠加标记(用户覆盖阈值后, pass/fail 仍会重新计算并保留, 只是多了这个
+>   布尔位)。当前前端尚未消费这个字段做视觉区分(无独立颜色/图标), 属于
+>   已知的次要缺口, 不影响门宽判定本身的正确性, 可留作后续增强。
 
 **status 判定规则**(后端 rule_engine 严格遵守):
 | 条件 | status | 说明 |
 |---|---|---|
-| `capacity == null` | `unknown` | 无法推算人数,Table B2 不适用 |
+| `capacity == null` | `non_passage` | 无法推算人数,Table B2 不适用(`reason="unknown_capacity"`) |
+| `capacity == 0` | `non_passage` | 空间被排除(厕所/走廊/楼梯/电梯等), 不是疏散门(`reason="excluded_space"`) |
 | `capacity <= 3` 且 `measured >= 750` | `pass` | Clause B13.4 绝对下限满足 |
 | `capacity <= 3` 且 `measured < 750` | `fail` | Clause B13.4 触发 |
-| `capacity <= 3` 且 `measured == null` | `unknown` | 宽度缺失 |
-| `capacity > 3` 且 `measured == null` | `unknown` | 宽度缺失 |
-| `capacity > 3` 且 `measured >= threshold` | `pass` | Table B2 满足 |
+| `capacity <= 3` 且 `measured == null` | `non_passage` | 宽度缺失 |
+| `capacity > 3000` | `non_passage` | 需 BA(屋宇署)个案核定, Table B2 无对应档 |
+| `capacity > 3` 且 `measured == null` | `non_passage` | 宽度缺失 |
+| `capacity > 3` 且 `measured >= threshold` 且非双扇门(或双扇门每扇估算 >=600mm) | `pass` | Table B2 + Clause B13.4 双扇门补充校验均满足 |
+| `capacity > 3` 且 `measured >= threshold` 但双扇门每扇估算 <600mm | `fail` | 总宽达标但 Clause B13.4 双扇门条款触发(`rule_clause="B13.4"`) |
 | `capacity > 3` 且 `measured < threshold` | `fail` | Table B2 不满足 |
-| 用户覆盖阈值后重算 | `overridden` | 独立标记,叠加在 pass/fail 之上(见 §5) |
+| 用户覆盖阈值后重算 | `has_threshold_override=true` | 独立布尔位, 叠加在 pass/fail 结果之上, 不改变 status 取值集合 |
 
 ---
 
@@ -156,19 +178,24 @@ interface PresetUpdate {
 前端**严格按 status 着色**,不允许自行判断颜色。
 
 ### 5.1 颜色与透明度
-| status | 颜色(RGB) | 透明度 | 边框 | 说明 |
-|---|---|---|---|---|
-| `pass` | `#22c55e`(绿) | 0.3(半透明) | 无 | 通过,不抢视觉焦点 |
-| `fail` | `#ef4444`(红) | 1.0(不透明) | 红色高亮 | 失败,最高视觉优先级 |
-| `unknown` | `#eab308`(黄) | 1.0(不透明) | 黄色高亮 | 待人工复核 |
-| `overridden` | `#3b82f6`(蓝) | 1.0(不透明) | 蓝色高亮 | 用户覆盖后的结果 |
-| 未检查(`check_result == null`) | 默认材质 | 0.3(半透明) | 无 | 上传后未点"运行检查" |
-| 非门元素 | 默认材质 | 0.5(半透明) | 无 | 让门突出 |
+
+> **2026-07-20 修正**: 以下按 `frontend/src/viewer.js` 实际的 `STATUS_COLORS`/
+> `STATUS_COLOR_HEX` 常量重写, 此前文档的 `unknown`(黄)/`overridden`(蓝)
+> 两行从未在前端实现, 属于设计未落地的文档残留, 现删除。
+
+| status | 颜色(RGB) | 透明度 | 说明 |
+|---|---|---|---|
+| `pass` | `#15803d`(深绿) | 1.0(不透明, colorize 直接着色) | 通过 |
+| `fail` | `#ef4444`(红) | 1.0(不透明) | 失败 |
+| `non_passage` | `#8b8b96`(灰) | 1.0(不透明) | 无法判定/不适用(宽度或人数未知, 或空间被排除), 前端 UI 展示为"unknown"分组 |
+| 未检查(`check_result == null`) | 默认材质(colorize=null) | 不受影响 | 上传后未点"运行检查" |
+| 非门元素 | 默认材质 + xrayed | 0.5(半透明, `setNonDoorsXrayed`) | 让门突出 |
+
+`has_threshold_override` 当前仅作为 API 字段返回, 前端暂未消费它来做颜色/图标区分。
 
 ### 5.2 着色优先级(一个门同时满足多条件时)
-1. `overridden` 优先于 `pass`/`fail`/`unknown`(因为用户改过,要让他看到自己的修改生效)
-2. `fail` > `unknown` > `pass`(失败最显眼)
-3. `check_result == null` 时用"未检查"色
+1. `fail` > `non_passage` > `pass`(失败最显眼)
+2. `check_result == null` 时用"未检查"色(无 colorize)
 
 ### 5.3 交互行为映射
 | 用户操作 | 前端行为 | 后端调用 |
@@ -176,7 +203,7 @@ interface PresetUpdate {
 | 点选门 | 高亮该门(恢复不透明)+ 隔离楼层 + 显示 DoorInspector | `GET /doors/{global_id}` |
 | 结果列表点击 fail 门 | 相机飞行到门 + 高亮 + 隔离楼层 | 无(纯前端) |
 | 按 `F` 键 | 跳到下一个 fail 门 | 无 |
-| 按 `U` 键 | 跳到下一个 unknown 门 | 无 |
+| 按 `U` 键 | 跳到下一个 "unknown"(UI 分组, 实际 = `status=="non_passage"` 或未检查)门 | 无 |
 | 点"标记防火门" | 门改为 fire_exit 高亮 + 触发重算 | `POST /override` type=fire_exit |
 | 编辑阈值并应用 | 所有受影响门重算 + 着色刷新 | `POST /override` type=threshold |
 
@@ -273,7 +300,7 @@ type FireExitSource =
   summary: {
     total_doors: number;
     checked_doors: number;     // is_fire_exit=true 的门数
-    by_status: { pass: number; fail: number; unknown: number; overridden: number; };
+    by_status: { pass: number; fail: number; non_passage: number; };
     needs_review_count: number;
     top_fails: CheckResult[];  // deficit_mm 降序前 5
   };
@@ -345,7 +372,7 @@ interface PresetSnapshot {
 
 前端实现时,以下字段必须能从后端响应中读到(否则报 bug):
 - [ ] `door.global_id` 存在且与 xeokit object id 一致
-- [ ] `door.check_result.status` ∈ {pass, fail, unknown, overridden}
+- [ ] `door.check_result.status` ∈ {pass, fail, non_passage}
 - [ ] `door.check_result.threshold_mm` 为数字或 null
 - [ ] `door.width_source` ∈ §6.1 枚举
 - [ ] `door.fire_exit_source` ∈ §6.5 枚举
@@ -356,5 +383,5 @@ interface PresetSnapshot {
 后端实现时,以下字段必须返回(否则前端报错):
 - [ ] 所有 `*_source` 字段非 null(即使值为 unknown 也要返回 `"unknown"`)
 - [ ] `needs_human_review` 是 boolean 不是 0/1
-- [ ] `overridden` 在用户覆盖后必须为 true
+- [ ] `has_threshold_override` 在用户覆盖后必须为 true(不是名为 `overridden` 的字段)
 - [ ] `deficit_mm` 仅 fail 时非 null,其它状态为 null

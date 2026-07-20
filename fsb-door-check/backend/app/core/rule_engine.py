@@ -1,13 +1,21 @@
-"""规则引擎 — Table B2 查询 + 四状态判定。
+"""规则引擎 — Table B2 查询 + 三状态判定(pass/fail/non_passage) + B13.4 双扇门补充校验。
 
 对应 docs/CONTRACT.md §3 CheckResult schema。
 对应 taskrequest/occupant_capacity_research.md Table B2 + Clause B13.4/B7.1。
+
+双扇门补充校验(2026-07-20 新增): 总宽通过 Table B2/绝对下限后, 仍需按
+Clause B13.4 校验每扇净宽 >=600mm。leaf 宽度用 measured_width_mm/2 估算
+(IFC 数据一般不提供逐扇净宽), 因此该项校验永远伴随 needs_human_review=True。
 """
 from __future__ import annotations
 
 from typing import Any, Optional
 
-from .presets import get_absolute_minimum_door_width_mm, table_b2_lookup
+from .presets import (
+    get_absolute_minimum_door_width_mm,
+    get_absolute_minimum_double_leaf_mm,
+    table_b2_lookup,
+)
 
 RULE_SOURCE = "HK FSB 2011 (2024) Part B, Table B2 + Clause B7.1"
 
@@ -108,14 +116,51 @@ def check_door(
             has_override=overridden,
         )
 
-    if measured >= threshold:
+    # Clause B13.4 双扇门补充校验: 总宽通过 Table B2/绝对下限后,
+    # 每扇净宽仍不得小于 600mm。leaf 宽度按 measured/2 估算(假设两扇均分),
+    # 因为 IFC 几乎不提供逐扇净宽,估算结果始终需要人工复核。
+    is_double_leaf = door_info.get("is_double_leaf")
+    leaf_threshold_mm: Optional[float] = None
+    leaf_estimate_mm: Optional[float] = None
+    leaf_fail = False
+    if is_double_leaf:
+        leaf_threshold_mm = float(get_absolute_minimum_double_leaf_mm())
+        leaf_estimate_mm = measured / 2.0
+        leaf_fail = leaf_estimate_mm < leaf_threshold_mm
+
+    leaf_notes = []
+    if is_double_leaf:
+        leaf_notes.append(
+            "double-leaf door: per-leaf width is an estimate (measured_width/2, "
+            "assumes even 50/50 split); verify actual active/inactive leaf widths "
+            "in model or field per Clause B13.4"
+        )
+
+    if measured >= threshold and not leaf_fail:
         return _result(
             door_info, preset_id, "pass", threshold, threshold_source,
             measured, None, capacity, capacity_source, width_source,
-            needs_human_review=needs_review_default or overridden,
+            needs_human_review=needs_review_default or overridden or bool(is_double_leaf),
             reason=_reason(capacity, threshold, measured, overridden, passed=True),
             rule_clause=rule_clause,
-            human_review_notes=_width_review_notes(width_source),
+            human_review_notes=_width_review_notes(width_source) + leaf_notes,
+            has_override=overridden,
+        )
+
+    if measured >= threshold and leaf_fail:
+        # 总宽通过 Table B2/B13.4, 但双扇门任一扇估算净宽 < 600mm(Clause B13.4)
+        return _result(
+            door_info, preset_id, "fail", threshold, threshold_source,
+            measured, None, capacity, capacity_source, width_source,
+            needs_human_review=True,
+            reason=(
+                f"capacity={capacity}, total width {measured}mm passes {threshold}mm "
+                f"threshold, but double-leaf estimated leaf width "
+                f"{leaf_estimate_mm:.0f}mm < Clause B13.4 minimum "
+                f"{leaf_threshold_mm:.0f}mm per leaf -> fail"
+            ),
+            rule_clause="B13.4",
+            human_review_notes=_width_review_notes(width_source) + leaf_notes,
             has_override=overridden,
         )
 
@@ -126,7 +171,7 @@ def check_door(
         needs_human_review=True,
         reason=_reason(capacity, threshold, measured, overridden, passed=False, deficit=deficit),
         rule_clause=rule_clause,
-        human_review_notes=_width_review_notes(width_source),
+        human_review_notes=_width_review_notes(width_source) + leaf_notes,
         has_override=overridden,
     )
 

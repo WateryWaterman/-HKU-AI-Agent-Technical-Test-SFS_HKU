@@ -256,14 +256,17 @@ window.addEventListener('alpine:init', () => {
       const n = parseInt(value, 10);
       if (isNaN(n) || n < 0) return;
       try {
-        await api.override(this.sessionId, {
+        const r = await api.override(this.sessionId, {
           type: 'occupancy',
           global_id: space.global_id,
           value: n,
         });
-        space.occupant_capacity = n;
+        space.capacity = n;
         space.capacity_source = 'user_input';
-        this._refreshDoorsOfSpace(space.global_id);
+        this._applyAffectedResults(r.affected_results);
+        if (this.selectedDoorId) {
+          this.selectedDoorDetail = await api.getDoor(this.selectedDoorId, this.sessionId);
+        }
       } catch (e) {
         this.error = e.message;
       }
@@ -271,17 +274,33 @@ window.addEventListener('alpine:init', () => {
 
     async overrideSpaceUse(space, useClass) {
       try {
-        await api.override(this.sessionId, {
+        const r = await api.override(this.sessionId, {
           type: 'space_use',
           global_id: space.global_id,
           value: useClass,
         });
-        this._refreshDoorsOfSpace(space.global_id);
-        if (this.selectedDoorDetail && this.selectedDoorDetail.related_space) {
+        this._applyAffectedResults(r.affected_results);
+        if (this.selectedDoorId) {
           this.selectedDoorDetail = await api.getDoor(this.selectedDoorId, this.sessionId);
         }
       } catch (e) {
         this.error = e.message;
+      }
+    },
+
+    _applyAffectedResults(affected) {
+      if (!affected || !Array.isArray(affected)) return;
+      for (const nr of affected) {
+        const d = this.doors.find(x => x.global_id === nr.door_global_id);
+        if (d) d.check_result = nr;
+      }
+      this.applyCheckColors();
+      if (this.filterStoreyId) this._focusStoreyInViewer(this.filterStoreyId);
+      else this.viewer.focusDoors([]);
+      if (this.sessionId) {
+        api.getSummary(this.sessionId).then(s => {
+          if (this.model && s.summary) this.model.summary = s.summary;
+        }).catch(() => {});
       }
     },
 
@@ -548,10 +567,6 @@ window.addEventListener('alpine:init', () => {
       } catch (e) { /* ignore */ }
     },
 
-    _refreshDoorsOfSpace(spaceGid) {
-      this.applyCheckColors();
-    },
-
     nextFail() {
       const fails = this.failsList;
       if (fails.length === 0) return;
@@ -632,6 +647,64 @@ window.addEventListener('alpine:init', () => {
         this.loading = false;
         this.loadingMsg = '';
       }
+    },
+
+    statusTrace(door, detail) {
+      const cr = door.check_result;
+      if (!cr) return [];
+      const space = detail?.related_space;
+      const steps = [];
+      if (space) {
+        steps.push({
+          text: `Space "${space.name || ''}"${space.long_name ? ` (LongName: "${space.long_name}")` : ''}, area = ${space.area_m2 ? space.area_m2.toFixed(1) + ' m²' : 'unknown'}`,
+        });
+        if (space.use_class_source === 'excluded') {
+          steps.push({
+            text: `LongName matched excluded keyword (toilet/corridor/stair/lift) → use_class_source = "excluded"`,
+            highlight: true,
+          });
+          steps.push({ text: `Excluded spaces have capacity = 0 (not counted toward egress)` });
+        } else if (space.use_class) {
+          steps.push({
+            text: `Use class = ${space.use_class} (${space.use_class_source}), factor = ${space.factor ?? '?'} (${space.factor_type})`,
+          });
+          if (space.capacity != null) {
+            steps.push({ text: `Capacity = ${space.capacity} (${space.capacity_source})` });
+          } else {
+            steps.push({ text: `Capacity = unknown (${space.capacity_source}) — needs manual override` });
+          }
+        } else {
+          steps.push({ text: `Use class = unknown (${space.use_class_source}) — no LongName match` });
+          steps.push({ text: `Capacity = ${space.capacity ?? 'unknown'} (${space.capacity_source})` });
+        }
+      } else {
+        steps.push({ text: `No related space found (door not linked to any IfcSpace via IfcRelSpaceBoundary)` });
+      }
+      if (cr.status === 'non_passage') {
+        if (cr.capacity_source === 'excluded') {
+          steps.push({ text: `capacity == 0 → non_passage (not an egress door, Table B2 does not apply)`, highlight: true });
+        } else if (cr.capacity_source === 'unknown') {
+          steps.push({ text: `capacity unknown → non_passage (cannot apply Table B2, needs use_class or capacity override)`, highlight: true });
+        } else if (cr.measured_mm == null) {
+          steps.push({ text: `width unknown → non_passage (cannot measure door width)`, highlight: true });
+        } else {
+          steps.push({ text: `non_passage: ${cr.reason}`, highlight: true });
+        }
+        if (space && (space.use_class_source === 'excluded' || space.capacity_source === 'excluded')) {
+          steps.push({ text: `To check this door: override use class (e.g. office/retail) or enter capacity manually above` });
+        }
+      } else if (cr.status === 'pass') {
+        steps.push({ text: `width ${Math.round(cr.measured_mm)}mm ≥ threshold ${Math.round(cr.threshold_mm)}mm → PASS` });
+        if (door.is_double_leaf) {
+          steps.push({ text: `Double-leaf: estimated leaf = ${Math.round(cr.measured_mm / 2)}mm ≥ 600mm (Clause B13.4) → PASS` });
+        }
+      } else if (cr.status === 'fail') {
+        steps.push({ text: `width ${Math.round(cr.measured_mm)}mm < threshold ${Math.round(cr.threshold_mm)}mm → FAIL (deficit ${Math.round(cr.deficit_mm)}mm)`, highlight: true });
+        if (door.is_double_leaf && cr.rule_clause === 'B13.4') {
+          steps.push({ text: `Double-leaf: estimated leaf ${Math.round(cr.measured_mm / 2)}mm < 600mm (Clause B13.4) → FAIL`, highlight: true });
+        }
+      }
+      return steps;
     },
 
     tooltip(name) {
