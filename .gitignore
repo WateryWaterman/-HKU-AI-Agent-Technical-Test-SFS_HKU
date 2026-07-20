@@ -28,4 +28,3 @@ fsb-door-check/backend/.uvicorn.pid
 # uvicorn runtime logs
 fsb-door-check/backend/uvicorn.log
 fsb-door-check/backend/uvicorn.err.log
-
