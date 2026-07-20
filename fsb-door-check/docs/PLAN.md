@@ -1,5 +1,9 @@
 # MVP 初版计划 — FSB 门净宽检查 Web 微原型
 
+> **⚠️ 历史文档**:本文件是初版计划,部分技术选型在实际开发中调整。
+> **实际实现以 `../README.md` 为准**(纯 HTML + xeokit 2.6 + Alpine.js,无构建步骤)。
+> 本文件保留作为思考过程记录。
+>
 > 文档定位:本文件是初版计划,供用户校对预期。不符之处调整后再进入实现。
 > 配套:`SSD.md`(系统序列图)、`EXPORT_DESIGN.md`(导出设计)、根目录 `README.md`。
 > 依据:`taskrequest/door_width_regulation_preset.md`、`taskrequest/ifc_field_fill_rate.md`、`taskrequest/ifc_field_deep_lookup.md`、`taskrequest/occupant_capacity_research.md`。

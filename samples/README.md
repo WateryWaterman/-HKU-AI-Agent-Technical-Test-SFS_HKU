@@ -4,16 +4,23 @@
 
 ## 样本清单
 
-| 文件名 | 建筑类型 | IFC 版本 | 大小 | 源仓库 | 源路径 |
-|---|---|---|---:|---|---|
-| `Duplex_Apartment_IFC2x3.ifc` | 多层民居（2 层双拼公寓） | IFC2x3 | 2.27 MB | buildingsmart-community/Community-Sample-Test-Files | `IFC 2.3.0.1 (IFC 2x3)/Duplex Apartment/Duplex_A_20110907.ifc` |
-| `Clinic_Architectural_IFC2x3.ifc` | 教学/机构类（2 层医疗牙科诊所，含医疗/牙科/儿科/影像科室） | IFC2x3 | 12.40 MB | buildingsmart-community/Community-Sample-Test-Files | `IFC 2.3.0.1 (IFC 2x3)/Medical-Dental Clinic/Clinic_Architectural.ifc` |
-| `Revit_SnowdonTower_ARC_FireRating_IFC4.ifc` | 小型大厦（Revit 示例商业多层建筑，已含 FireRating 属性） | IFC4 | 13.02 MB | youshengCode/IfcSampleFiles | `Ifc4_Revit_ARC_FireRatingAdded.ifc` |
-| `SampleHouse_IFC4.ifc` | 单户住宅（Autodesk Revit 2015 示例房屋） | IFC4 | 2.17 MB | youshengCode/IfcSampleFiles | `Ifc4_SampleHouse.ifc` |
+| 文件名 | 建筑类型 | IFC 版本 | 大小 | 源仓库 | 源路径 | web-ifc 兼容 |
+|---|---|---|---:|---|---|---|
+| `Duplex_xeokit.ifc` | 多层民居(2 层双拼公寓) | IFC2x3 | 1.24 MB | xeokit/xeokit-sdk | `assets/models/ifc/Duplex.ifc` | ✓(演示首选) |
+| `Duplex_Apartment_IFC2x3.ifc` | 多层民居(2 层双拼公寓,2011 Revit 导出) | IFC2x3 | 2.27 MB | buildingsmart-community/Community-Sample-Test-Files | `IFC 2.3.0.1 (IFC 2x3)/Duplex Apartment/Duplex_A_20110907.ifc` | ✗(web-ifc@0.0.51 报 RangeError,后端分析可用) |
+| `Clinic_Architectural_IFC2x3.ifc` | 教学/机构类(2 层医疗牙科诊所,含医疗/牙科/儿科/影像科室) | IFC2x3 | 12.40 MB | buildingsmart-community/Community-Sample-Test-Files | `IFC 2.3.0.1 (IFC 2x3)/Medical-Dental Clinic/Clinic_Architectural.ifc` | ✓(254 门/269 空间,功能验证) |
+| `Revit_SnowdonTower_ARC_FireRating_IFC4.ifc` | 小型大厦(Revit 示例商业多层建筑,已含 FireRating 属性) | IFC4 | 13.02 MB | youshengCode/IfcSampleFiles | `Ifc4_Revit_ARC_FireRatingAdded.ifc` | —(无 IfcSpace,不适合门检查) |
+| `SampleHouse_IFC4.ifc` | 单户住宅(Autodesk Revit 2015 示例房屋) | IFC4 | 2.17 MB | youshengCode/IfcSampleFiles | `Ifc4_SampleHouse.ifc` | ✓(IFC4 路径验证) |
 
 ## 许可证
 
-### 1. Duplex_Apartment_IFC2x3.ifc 与 Clinic_Architectural_IFC2x3.ifc
+### 1. Duplex_xeokit.ifc
+- 来源:xeokit/xeokit-sdk GitHub 仓库 `assets/models/ifc/Duplex.ifc`(https://github.com/xeokit/xeokit-sdk)
+- 与 `Duplex_Apartment_IFC2x3.ifc` 是同一建筑,但由 IFC Tools Java Toolbox 导出(非 2011 Revit),STEP 序列化更规范,web-ifc@0.0.51 兼容
+- 许可证:跟随 xeokit-sdk(Apache 2.0,见 https://github.com/xeokit/xeokit-sdk/blob/master/LICENSE)
+- 用途:**演示首选**(14 门 / 21 空间,跑得快,3D 渲染正常)
+
+### 2. Duplex_Apartment_IFC2x3.ifc 与 Clinic_Architectural_IFC2x3.ifc
 - 许可证：**Creative Commons Attribution 4.0 International (CC BY 4.0)**
 - 完整文本：http://creativecommons.org/licenses/by/4.0/
 - 本地副本：`_LICENSE_buildingsmart_community.txt`
@@ -23,7 +30,7 @@
 - 源仓库 URL：https://github.com/buildingsmart-community/Community-Sample-Test-Files
 - 项目历史：最早由德国发布，后由美国 NIBS / US Construction Engineering Research Laboratory 托管（2009–2020），2020 年起由 buildingSMART International 在 GitHub 重新发布。
 
-### 2. Revit_SnowdonTower_ARC_FireRating_IFC4.ifc 与 SampleHouse_IFC4.ifc
+### 3. Revit_SnowdonTower_ARC_FireRating_IFC4.ifc 与 SampleHouse_IFC4.ifc
 - 源仓库：https://github.com/youshengCode/IfcSampleFiles
 - 仓库自述："A collection of IFC sample files for software test use."（未在仓库根提供明确许可证文件）
 - 原始来源：Autodesk Revit 自带示例项目（Snowdon Towers 与 Sample House）经 Revit IFC Exporter 导出
