@@ -82,6 +82,7 @@ def analyze_ifc(path: str | Path, preset_id: str = "hk_fsb_2011_b2_default") -> 
             "is_fire_exit": is_fe,
             "fire_exit_source": fe_src,
             "fire_exit_reasons": fe_reasons,
+            "is_checked": False,
             "space_global_id": space_ids_primary,
             "space_global_id_other": space_ids_other,
             "storey_global_id": get_storey_of_element(d),

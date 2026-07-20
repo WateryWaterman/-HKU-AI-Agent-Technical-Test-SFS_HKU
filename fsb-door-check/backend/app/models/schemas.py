@@ -91,6 +91,7 @@ class Door(BaseModel):
     fire_exit_source: str = "not_fire_exit"
     fire_exit_reasons: list[str] = Field(default_factory=list)
     is_double_leaf: Optional[bool] = None
+    is_checked: bool = False
     check_result: Optional[CheckResult] = None
 
 

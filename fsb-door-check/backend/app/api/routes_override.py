@@ -5,9 +5,10 @@
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Body
+from pydantic import BaseModel
 
 from ..core.presets import compute_capacity, get_default_factor_for_use_class
 from ..core.rule_engine import check_door
@@ -15,6 +16,11 @@ from ..models.schemas import OverrideRequest
 from ..session import Session, get_session
 
 router = APIRouter(prefix="/override", tags=["override"])
+
+
+class BatchCheckedRequest(BaseModel):
+    global_ids: list[str]
+    value: bool
 
 
 @router.post("/{sid}")
@@ -36,14 +42,57 @@ def apply_override(sid: str, req: OverrideRequest):
         affected = _override_threshold(s, req)
     elif req.type in ("storey_sprinkler", "storey_entrance"):
         affected = _override_storey(s, req)
+    elif req.type == "checked":
+        affected = _override_checked(s, req)
     else:
         raise HTTPException(status_code=400, detail={
             "error": "invalid_override_type", "detail": req.type,
-            "hint": "valid types: fire_exit | space_use | occupancy | threshold | storey_sprinkler | storey_entrance"})
+            "hint": "valid types: fire_exit | space_use | occupancy | threshold | storey_sprinkler | storey_entrance | checked"})
 
     s.overrides.append(req.model_dump())
     s.result["summary"] = _rebuild_summary(s.result.get("doors", []))
     return {"session_id": sid, "applied": req.model_dump(), "affected_results": affected}
+
+
+@router.post("/{sid}/checked/batch")
+def batch_checked(sid: str, req: BatchCheckedRequest):
+    s = get_session(sid)
+    if not s:
+        raise HTTPException(status_code=404, detail={
+            "error": "session_not_found", "detail": sid})
+    count = 0
+    for gid in req.global_ids:
+        s.door_checked_overrides[gid] = bool(req.value)
+        door = s.find_door(gid)
+        if door:
+            door["is_checked"] = bool(req.value)
+            count += 1
+    s.result["summary"] = _rebuild_summary(s.result.get("doors", []))
+    return {"session_id": sid, "updated": count}
+
+
+@router.delete("/{sid}/threshold")
+def delete_threshold_override(sid: str, cmin: int, cmax: Optional[int] = None):
+    s = get_session(sid)
+    if not s:
+        raise HTTPException(status_code=404, detail={
+            "error": "session_not_found", "detail": sid})
+    s.clear_preset_override(cmin, cmax)
+    affected = _recheck_all_doors(s)
+    s.result["summary"] = _rebuild_summary(s.result.get("doors", []))
+    return {"session_id": sid, "deleted": {"capacity_min": cmin, "capacity_max": cmax}, "affected_results": affected}
+
+
+@router.delete("/{sid}/threshold/all")
+def delete_all_threshold_overrides(sid: str):
+    s = get_session(sid)
+    if not s:
+        raise HTTPException(status_code=404, detail={
+            "error": "session_not_found", "detail": sid})
+    s.clear_all_preset_overrides()
+    affected = _recheck_all_doors(s)
+    s.result["summary"] = _rebuild_summary(s.result.get("doors", []))
+    return {"session_id": sid, "cleared_all": True, "affected_results": affected}
 
 
 def _override_fire_exit(s: Session, req: OverrideRequest) -> list[dict[str, Any]]:
@@ -127,6 +176,32 @@ def _override_storey(s: Session, req: OverrideRequest) -> list[dict[str, Any]]:
         else:
             storey["is_entrance_level"] = bool(req.value)
     return []
+
+
+def _override_checked(s: Session, req: OverrideRequest) -> list[dict[str, Any]]:
+    s.door_checked_overrides[req.global_id] = bool(req.value)
+    door = s.find_door(req.global_id)
+    if door:
+        door["is_checked"] = bool(req.value)
+    return []
+
+
+def _recheck_all_doors(s: Session) -> list[dict[str, Any]]:
+    affected: list[dict[str, Any]] = []
+    for d in s.result.get("doors", []):
+        space_gid = d.get("space_global_id")
+        space = s.find_space(space_gid) if space_gid else None
+        if not space:
+            space = {"capacity": None, "capacity_source": "unknown"}
+        override_threshold = _match_preset_override(s, space.get("occupant_capacity"))
+        new_result = check_door(
+            d, space,
+            override_threshold_mm=override_threshold.get("threshold"),
+            override_threshold_source=override_threshold.get("source"),
+        )
+        d["check_result"] = new_result
+        affected.append(new_result)
+    return affected
 
 
 def _recheck_doors_of_space(s: Session, space_gid: str, space: dict) -> list[dict[str, Any]]:

@@ -86,4 +86,37 @@ export const api = {
     }
     return r.json();
   },
+
+  async deleteThresholdOverride(sessionId, cmin, cmax) {
+    let url = `${API_BASE}/override/${sessionId}/threshold?cmin=${cmin}`;
+    if (cmax !== null && cmax !== undefined) url += `&cmax=${cmax}`;
+    const r = await fetch(url, { method: 'DELETE' });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: r.statusText }));
+      throw new Error(err.detail || `delete threshold failed (${r.status})`);
+    }
+    return r.json();
+  },
+
+  async deleteAllThresholdOverrides(sessionId) {
+    const r = await fetch(`${API_BASE}/override/${sessionId}/threshold/all`, { method: 'DELETE' });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: r.statusText }));
+      throw new Error(err.detail || `delete all thresholds failed (${r.status})`);
+    }
+    return r.json();
+  },
+
+  async batchChecked(sessionId, globalIds, value) {
+    const r = await fetch(`${API_BASE}/override/${sessionId}/checked/batch`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ global_ids: globalIds, value }),
+    });
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({ detail: r.statusText }));
+      throw new Error(err.detail || `batch checked failed (${r.status})`);
+    }
+    return r.json();
+  },
 };

@@ -26,6 +26,7 @@ class Session:
     space_occupancy_overrides: dict[str, int] = field(default_factory=dict)
     storey_sprinkler_overrides: dict[str, bool] = field(default_factory=dict)
     storey_entrance_overrides: dict[str, bool] = field(default_factory=dict)
+    door_checked_overrides: dict[str, bool] = field(default_factory=dict)
 
     def find_door(self, global_id: str) -> Optional[dict[str, Any]]:
         for d in self.result.get("doors", []):
@@ -44,6 +45,12 @@ class Session:
             if s.get("global_id") == global_id:
                 return s
         return None
+
+    def clear_preset_override(self, cmin: int, cmax: Optional[int]) -> None:
+        self.preset_overrides.pop((cmin, cmax), None)
+
+    def clear_all_preset_overrides(self) -> None:
+        self.preset_overrides.clear()
 
 
 _sessions: dict[str, Session] = {}
