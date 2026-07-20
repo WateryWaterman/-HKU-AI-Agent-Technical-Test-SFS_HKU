@@ -6,10 +6,10 @@ import * as xeokit from '../lib/xeokit-sdk.es.min.js';
 import * as WebIFC from '../lib/web-ifc-api.js';
 
 const STATUS_COLORS = {
-  pass:       [0.133, 0.773, 0.369],
-  fail:       [0.937, 0.267, 0.267],
-  unknown:    [0.918, 0.702, 0.031],
-  overridden: [0.231, 0.510, 0.965],
+  pass:       [0.10, 0.50, 0.25],
+  fail:       [0.94, 0.27, 0.27],
+  unknown:    [0.92, 0.70, 0.03],
+  overridden: [0.23, 0.51, 0.97],
 };
 
 const WASM_PATH = '/lib/';
@@ -253,12 +253,7 @@ export class IfcViewer {
       const color = STATUS_COLORS[status];
       if (!color) continue;
       obj.colorize = color;
-      if (status === 'pass') {
-        obj.xrayed = true;
-        this._setXrayAlpha(0.3);
-      } else {
-        obj.xrayed = false;
-      }
+      obj.xrayed = false;
     }
   }
 
@@ -267,8 +262,7 @@ export class IfcViewer {
       const obj = this.viewer.scene.objects[id];
       if (obj) {
         obj.colorize = null;
-        obj.xrayed = true;
-        this._setXrayAlpha(0.3);
+        obj.xrayed = false;
       }
     }
   }
@@ -344,27 +338,17 @@ export class IfcViewer {
   }
 
   focusDoors(doorGlobalIds) {
-    const focusSet = new Set(doorGlobalIds);
     const objects = this.viewer.scene.objects;
+    for (const id in objects) {
+      objects[id].visible = true;
+    }
     for (const id in objects) {
       const obj = objects[id];
       if (this._doorIds.has(id)) {
-        if (focusSet.size === 0) {
-          obj.xrayed = false;
-        } else if (focusSet.has(id)) {
-          obj.xrayed = false;
-        } else {
-          obj.xrayed = true;
-          this._setXrayAlpha(0.15);
-        }
+        obj.xrayed = false;
       } else {
-        if (focusSet.size === 0) {
-          obj.xrayed = true;
-          this._setXrayAlpha(0.5);
-        } else {
-          obj.xrayed = true;
-          this._setXrayAlpha(0.85);
-        }
+        obj.xrayed = true;
+        this._setXrayAlpha(0.5);
       }
     }
   }
@@ -374,13 +358,20 @@ export class IfcViewer {
       this.focusDoors([]);
       return;
     }
-    this._setXrayAlpha(0.92);
+    this._setXrayAlpha(0.35);
     const storeyEntities = this._storeyEntityMap[storeyId] || new Set();
     const objects = this.scene.objects;
     for (const id in objects) {
       const obj = objects[id];
       const inStorey = storeyEntities.has(id);
-      obj.xrayed = !inStorey;
+      const isDoor = this._doorIds.has(id);
+      if (inStorey) {
+        obj.visible = true;
+        obj.xrayed = !isDoor;
+      } else {
+        obj.visible = false;
+        obj.xrayed = false;
+      }
     }
   }
 
@@ -393,7 +384,7 @@ export class IfcViewer {
 }
 
 export const STATUS_COLOR_HEX = {
-  pass: '#22c55e',
+  pass: '#15803d',
   fail: '#ef4444',
   unknown: '#eab308',
   overridden: '#3b82f6',

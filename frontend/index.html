@@ -193,22 +193,10 @@
               <div class="kv"><span class="k">Clause B30.3 refuge</span><span class="v" x-text="presets?.default?.absolute_minimums?.clause_b30_3?.min_clear_width_mm + 'mm'"></span></div>
             </div>
 
-            <div class="panel" x-show="presets && hasModel">
+            <div class="panel" x-show="presets">
               <h3>Threshold Override</h3>
-              <div class="note" style="margin-bottom:8px">Pick a Table B2 capacity band and override its minimum door width. Re-checks all affected doors live.</div>
-              <div style="display:flex;flex-direction:column;gap:8px">
-                <select @change="thrEditRowIdx = parseInt($event.target.value, 10); thrEditWidthMm = ''" :value="thrEditRowIdx">
-                  <template x-for="(row, idx) in presets?.default?.table_b2_thresholds || []" :key="row.capacity_min">
-                    <option :value="idx" x-text="(row.capacity_max ? `${row.capacity_min}-${row.capacity_max}` : `>${row.capacity_min}`) + ' — current: ' + (row.min_width_per_door_mm ?? 'BA') + 'mm'"></option>
-                  </template>
-                </select>
-                <div style="display:flex;gap:6px;align-items:center">
-                  <label style="font-size:11px;color:#6b7280;white-space:nowrap">New width (mm):</label>
-                  <input class="num" style="flex:1" type="number" min="100" max="5000" x-model="thrEditWidthMm" @keydown.enter="applyThresholdEdit()" :placeholder="currentThresholdRow ? String(currentThresholdRow.min_width_per_door_mm ?? '') : ''" />
-                  <button class="btn" @click="applyThresholdEdit()" :disabled="!thrEditWidthMm" style="background:#2563eb;color:#fff;border:none;padding:4px 10px;border-radius:3px;cursor:pointer;font-size:11px">Apply</button>
-                </div>
-                <div class="note" x-show="currentThresholdRow" x-text="'Target band: ' + (currentThresholdRow?.capacity_max ? currentThresholdRow.capacity_min + '-' + currentThresholdRow.capacity_max : '>' + currentThresholdRow?.capacity_min) + ' persons · default ' + (currentThresholdRow?.min_width_per_door_mm ?? 'BA') + 'mm · ' + (currentThresholdRow?.min_doors ?? '—') + ' doors'"></div>
-              </div>
+              <div class="note" style="margin-bottom:8px">Edit Table B2 capacity band thresholds. Click to open the threshold editor dialog.</div>
+              <button class="btn" @click="openThresholdDialog()" style="background:#2563eb;color:#fff;border:none;padding:6px 14px;border-radius:3px;cursor:pointer;font-size:12px">Edit Thresholds...</button>
             </div>
 
             <div class="panel" x-show="!presets">
@@ -223,18 +211,25 @@
               <div>
                 <div class="panel">
                   <h3>Selected Door</h3>
-                  <div class="kv"><span class="k">GlobalId</span><span class="v" x-text="selectedDoor.global_id"></span></div>
+                  <div class="kv"><span class="k term" :title="tooltip('global_id')">GlobalId <span class="tip-icon">ⓘ</span></span><span class="v" x-text="selectedDoor.global_id"></span></div>
                   <div class="kv"><span class="k">Name</span><span class="v" x-text="selectedDoor.name || '—'"></span></div>
-                  <div class="kv"><span class="k">Overall Width</span><span class="v" x-text="fmtWidth(selectedDoor.overall_width_mm)"></span></div>
-                  <div class="kv"><span class="k">Width Source</span><span class="v" x-text="selectedDoor.width_source"></span></div>
-                  <div class="kv"><span class="k">Fire Exit</span><span class="v">
+                  <div class="kv"><span class="k term" :title="tooltip('overall_width')">Overall Width <span class="tip-icon">ⓘ</span></span><span class="v" x-text="fmtWidth(selectedDoor.overall_width_mm)"></span></div>
+                  <div class="kv"><span class="k term" :title="tooltip('width_source')">Width Source <span class="tip-icon">ⓘ</span></span><span class="v" x-text="selectedDoor.width_source"></span></div>
+                  <div class="kv"><span class="k term" :title="tooltip('fire_exit')">Fire Exit <span class="tip-icon">ⓘ</span></span><span class="v">
                     <span class="badge" :style="`background:${selectedDoor.is_fire_exit ? '#22c55e' : '#9ca3af'}`" x-text="selectedDoor.is_fire_exit ? 'YES' : 'no'"></span>
                   </span></div>
-                  <div class="kv"><span class="k">FE Source</span><span class="v" x-text="selectedDoor.fire_exit_source"></span></div>
-                  <div style="margin-top:8px">
+                  <div class="kv"><span class="k term" :title="tooltip('fe_source')">FE Source <span class="tip-icon">ⓘ</span></span><span class="v" x-text="selectedDoor.fire_exit_source"></span></div>
+                  <div class="kv"><span class="k term" :title="tooltip('is_checked')">Checked <span class="tip-icon">ⓘ</span></span><span class="v">
+                    <span class="badge" :style="`background:${selectedDoor.is_checked ? '#22c55e' : '#9ca3af'}`" x-text="selectedDoor.is_checked ? 'YES' : 'no'"></span>
+                  </span></div>
+                  <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
                     <label class="toggle">
                       <input type="checkbox" :checked="selectedDoor.is_fire_exit" @change="toggleFireExit(selectedDoor)" />
                       Mark as fire exit
+                    </label>
+                    <label class="toggle">
+                      <input type="checkbox" :checked="selectedDoor.is_checked" @change="toggleDoorChecked(selectedDoor)" />
+                      Mark as checked
                     </label>
                   </div>
                 </div>
@@ -245,9 +240,9 @@
                     <div>
                       <div class="kv"><span class="k">Name</span><span class="v" x-text="selectedDoorDetail.related_space.long_name || selectedDoorDetail.related_space.name || '—'"></span></div>
                       <div class="kv"><span class="k">Area</span><span class="v" x-text="selectedDoorDetail.related_space.area_m2 ? selectedDoorDetail.related_space.area_m2.toFixed(1)+' m²' : '—'"></span></div>
-                      <div class="kv"><span class="k">Use Class</span><span class="v" x-text="selectedDoorDetail.related_space.use_class || '—'"></span></div>
-                      <div class="kv"><span class="k">Capacity</span><span class="v" x-text="fmtCapacity(selectedDoorDetail.related_space.occupant_capacity)"></span></div>
-                      <div class="kv"><span class="k">Cap Source</span><span class="v" x-text="selectedDoorDetail.related_space.capacity_source"></span></div>
+                      <div class="kv"><span class="k term" :title="tooltip('use_class')">Use Class <span class="tip-icon">ⓘ</span></span><span class="v" x-text="selectedDoorDetail.related_space.use_class || '—'"></span></div>
+                      <div class="kv"><span class="k term" :title="tooltip('occupant_capacity')">Capacity <span class="tip-icon">ⓘ</span></span><span class="v" x-text="fmtCapacity(selectedDoorDetail.related_space.occupant_capacity)"></span></div>
+                      <div class="kv"><span class="k term" :title="tooltip('capacity_source')">Cap Source <span class="tip-icon">ⓘ</span></span><span class="v" x-text="selectedDoorDetail.related_space.capacity_source"></span></div>
                       <div style="margin-top:8px">
                         <label style="font-size:11px;color:#6b7280">Override use class:</label>
                         <select @change="overrideSpaceUse(selectedDoorDetail.related_space, $event.target.value); $event.target.value=''">
@@ -267,14 +262,14 @@
                   <h3>Check Result</h3>
                   <template x-if="selectedDoor.check_result">
                     <div>
-                      <div class="kv"><span class="k">Status</span><span class="v">
+                      <div class="kv"><span class="k term" :title="tooltip('status')">Status <span class="tip-icon">ⓘ</span></span><span class="v">
                         <span class="badge" :style="`background:${statusColor(selectedDoor.check_result.status)}`" x-text="statusLabel(selectedDoor.check_result.status)"></span>
                       </span></div>
-                      <div class="kv"><span class="k">Rule</span><span class="v" x-text="selectedDoor.check_result.rule_clause"></span></div>
-                      <div class="kv"><span class="k">Threshold</span><span class="v" x-text="fmtWidth(selectedDoor.check_result.threshold_mm)"></span></div>
-                      <div class="kv"><span class="k">Measured</span><span class="v" x-text="fmtWidth(selectedDoor.check_result.measured_mm)"></span></div>
-                      <div class="kv" x-show="selectedDoor.check_result.deficit_mm != null"><span class="k">Deficit</span><span class="v" style="color:#ef4444" x-text="fmtWidth(selectedDoor.check_result.deficit_mm)"></span></div>
-                      <div class="kv"><span class="k">Needs Review</span><span class="v" x-text="selectedDoor.check_result.needs_human_review ? 'YES' : 'no'"></span></div>
+                      <div class="kv"><span class="k term" :title="tooltip('rule_clause')">Rule <span class="tip-icon">ⓘ</span></span><span class="v" x-text="selectedDoor.check_result.rule_clause"></span></div>
+                      <div class="kv"><span class="k term" :title="tooltip('threshold')">Threshold <span class="tip-icon">ⓘ</span></span><span class="v" x-text="fmtWidth(selectedDoor.check_result.threshold_mm)"></span></div>
+                      <div class="kv"><span class="k term" :title="tooltip('measured')">Measured <span class="tip-icon">ⓘ</span></span><span class="v" x-text="fmtWidth(selectedDoor.check_result.measured_mm)"></span></div>
+                      <div class="kv" x-show="selectedDoor.check_result.deficit_mm != null"><span class="k term" :title="tooltip('deficit')">Deficit <span class="tip-icon">ⓘ</span></span><span class="v" style="color:#ef4444" x-text="fmtWidth(selectedDoor.check_result.deficit_mm)"></span></div>
+                      <div class="kv"><span class="k term" :title="tooltip('needs_review')">Needs Review <span class="tip-icon">ⓘ</span></span><span class="v" x-text="selectedDoor.check_result.needs_human_review ? 'YES' : 'no'"></span></div>
                       <div class="note" x-text="selectedDoor.check_result.reason"></div>
                       <template x-if="selectedDoor.check_result.human_review_notes.length">
                         <ul style="margin-top:6px;padding-left:18px;font-size:11px;color:#b45309">
@@ -303,11 +298,17 @@
                   <button :class="{active: filterStatus==='unknown'}" @click="filterStatus='unknown'">? (<span x-text="unknownsList.length"></span>)</button>
                   <button :class="{active: filterStatus==='pass'}" @click="filterStatus='pass'">PASS</button>
                   <button :class="{active: filterStatus==='overridden'}" @click="filterStatus='overridden'">OVR</button>
+                  <button :class="{active: filterStatus==='checked'}" @click="filterStatus='checked'">Checked</button>
+                  <button :class="{active: filterStatus==='unchecked'}" @click="filterStatus='unchecked'">Unchecked</button>
                   <span x-show="filterStoreyId" style="font-size:10px;color:#6b7280;align-self:center">· filtered by storey</span>
                 </div>
                 <div class="filter-bar">
                   <input type="text" x-model="searchQuery" placeholder="Search by GlobalId or Name..." style="flex:1;padding:4px 8px;border:1px solid #d1d5db;border-radius:3px;font-size:11px" @keydown.enter="$event.target.blur()" />
                   <button x-show="searchQuery" @click="searchQuery=''" style="padding:4px 8px;border:1px solid #d1d5db;background:#fff;border-radius:3px;font-size:11px;cursor:pointer">Clear</button>
+                </div>
+                <div class="filter-bar" x-show="sessionId && filteredDoors.length > 0">
+                  <button @click="batchToggleChecked(true)" style="padding:3px 8px;border:1px solid #d1d5db;background:#fff;border-radius:3px;font-size:10px;cursor:pointer">Check all in filter</button>
+                  <button @click="batchToggleChecked(false)" style="padding:3px 8px;border:1px solid #d1d5db;background:#fff;border-radius:3px;font-size:10px;cursor:pointer">Uncheck all</button>
                 </div>
 
                 <div class="panel" x-show="failsList.length === 0 && filterStatus==='all'">
@@ -318,7 +319,10 @@
                   <div class="door-row" :class="{selected: selectedDoorId===d.global_id}" @click="flyToDoor(d.global_id)">
                     <div style="display:flex;justify-content:space-between;align-items:center">
                       <span class="name" x-text="d.name || '(unnamed)'"></span>
-                      <span class="badge" :style="`background:${d.check_result ? statusColor(d.check_result.status) : '#9ca3af'}`" x-text="d.check_result ? statusLabel(d.check_result.status) : '—'"></span>
+                      <div style="display:flex;gap:4px;align-items:center">
+                        <input type="checkbox" :checked="d.is_checked" @change="toggleDoorChecked(d); $event.stopPropagation()" style="margin:0;cursor:pointer" :title="tooltip('is_checked')" />
+                        <span class="badge" :style="`background:${d.check_result ? statusColor(d.check_result.status) : '#9ca3af'}`" x-text="d.check_result ? statusLabel(d.check_result.status) : '—'"></span>
+                      </div>
                     </div>
                     <div class="gid"><span x-text="shortGid(d.global_id)"></span> · w=<span x-text="fmtWidth(d.overall_width_mm)"></span> · thr=<span x-text="d.check_result ? fmtWidth(d.check_result.threshold_mm) : '—'"></span> · cap=<span x-text="d.check_result ? fmtCapacity(d.check_result.occupant_capacity) : '—'"></span></div>
                   </div>
@@ -331,6 +335,50 @@
     </div>
   </div>
 
-  <style>[x-cloak]{display:none}</style>
+  <!-- Threshold Editor Dialog -->
+  <dialog id="thresholdDialog" x-show="thresholdDialogOpen" style="border:1px solid #d1d5db;border-radius:8px;padding:0;max-width:560px;width:90%">
+    <div style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="font-size:14px;font-weight:600">Threshold Editor — Table B2</h3>
+        <button @click="closeThresholdDialog()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#6b7280">×</button>
+      </div>
+      <div class="note" style="margin-bottom:10px" x-show="!sessionId">Load an IFC file to apply threshold overrides. Defaults are shown below.</div>
+      <table class="b2" style="width:100%;font-size:11px">
+        <thead><tr><th>Capacity</th><th>Doors</th><th>Default</th><th>Current</th><th>New (mm)</th><th>Action</th></tr></thead>
+        <tbody>
+          <template x-for="row in thrDialogRows" :key="row.capacity_min">
+            <tr>
+              <td x-text="row.capacity_max ? row.capacity_min + '-' + row.capacity_max : '>' + row.capacity_min"></td>
+              <td x-text="row.min_doors ?? '—'"></td>
+              <td x-text="row.default_width ?? 'BA'"></td>
+              <td>
+                <span x-text="row.current_width ?? 'BA'" :style="row.is_override ? 'color:#2563eb;font-weight:600' : ''"></span>
+                <span x-show="row.is_override" style="color:#2563eb;font-size:9px"> (override)</span>
+              </td>
+              <td>
+                <input class="num" type="number" min="100" max="5000" style="width:70px" x-model="row.edit_width" :placeholder="String(row.current_width ?? '')" />
+              </td>
+              <td style="white-space:nowrap">
+                <button @click="applyThresholdBand(row)" :disabled="!row.edit_width || !sessionId" style="background:#2563eb;color:#fff;border:none;padding:2px 6px;border-radius:2px;cursor:pointer;font-size:10px" x-show="row.edit_width">Apply</button>
+                <button @click="deleteThresholdBand(row)" :disabled="!row.is_override || !sessionId" style="background:#ef4444;color:#fff;border:none;padding:2px 6px;border-radius:2px;cursor:pointer;font-size:10px;margin-left:2px" x-show="row.is_override">Reset</button>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+      <div style="display:flex;justify-content:space-between;margin-top:12px">
+        <button @click="resetAllThresholds()" :disabled="!sessionId" style="background:#6b7280;color:#fff;border:none;padding:6px 12px;border-radius:3px;cursor:pointer;font-size:11px">Reset All to Defaults</button>
+        <button @click="closeThresholdDialog()" style="background:#e5e7eb;color:#374151;border:1px solid #d1d5db;padding:6px 12px;border-radius:3px;cursor:pointer;font-size:11px">Close</button>
+      </div>
+    </div>
+  </dialog>
+
+  <style>
+    [x-cloak]{display:none}
+    .term { cursor: help; border-bottom: 1px dotted #9ca3af; }
+    .term .tip-icon { color: #9ca3af; font-size: 10px; margin-left: 2px; }
+    .term:hover { color: #2563eb; }
+    .term:hover .tip-icon { color: #2563eb; }
+  </style>
 </body>
 </html>

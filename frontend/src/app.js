@@ -25,6 +25,8 @@ window.addEventListener('alpine:init', () => {
     exportMsgKind: 'info',
     searchQuery: '',
     highlightFireExit: true,
+    thresholdDialogOpen: false,
+    thrDialogRows: [],
 
     init() {
       this.$nextTick(() => {
@@ -60,7 +62,11 @@ window.addEventListener('alpine:init', () => {
 
     get filteredDoors() {
       let list = this.doors;
-      if (this.filterStatus !== 'all') {
+      if (this.filterStatus === 'checked') {
+        list = list.filter(d => d.is_checked);
+      } else if (this.filterStatus === 'unchecked') {
+        list = list.filter(d => !d.is_checked);
+      } else if (this.filterStatus !== 'all') {
         list = list.filter(d => d.check_result && d.check_result.status === this.filterStatus);
       }
       if (this.filterStoreyId) {
@@ -215,6 +221,8 @@ window.addEventListener('alpine:init', () => {
           if (d) d.check_result = newResult;
         }
         this.applyCheckColors();
+        if (this.filterStoreyId) this._focusStoreyInViewer(this.filterStoreyId);
+        else this.viewer.focusDoors([]);
       } catch (e) {
         this.error = e.message;
       } finally {
@@ -412,6 +420,175 @@ window.addEventListener('alpine:init', () => {
     ruleLink() {
       if (!this.presets) return '#';
       return this.presets.default.rule_link || '#';
+    },
+
+    openThresholdDialog() {
+      const defaults = this.presets?.default?.table_b2_thresholds || [];
+      this.thrDialogRows = defaults.map(row => ({
+        capacity_min: row.capacity_min,
+        capacity_max: row.capacity_max,
+        min_doors: row.min_doors,
+        default_width: row.min_width_per_door_mm,
+        current_width: row.min_width_per_door_mm,
+        edit_width: '',
+        is_override: false,
+      }));
+      if (this.sessionId) {
+        api.getSummary(this.sessionId).then(s => {
+          const overrides = s.overrides?.filter(o => o.type === 'threshold') || [];
+          for (const ov of overrides) {
+            const v = ov.value || {};
+            const cmin = v.capacity_min;
+            const cmax = v.capacity_max ?? null;
+            const row = this.thrDialogRows.find(r => r.capacity_min === cmin && (r.capacity_max ?? null) === (cmax ?? null));
+            if (row) {
+              row.current_width = v.min_width_per_door_mm;
+              row.is_override = true;
+            }
+          }
+        }).catch(() => {});
+      }
+      this.thresholdDialogOpen = true;
+      this.$nextTick(() => {
+        const dlg = document.getElementById('thresholdDialog');
+        if (dlg && typeof dlg.showModal === 'function') dlg.showModal();
+      });
+    },
+
+    closeThresholdDialog() {
+      this.thresholdDialogOpen = false;
+      const dlg = document.getElementById('thresholdDialog');
+      if (dlg && dlg.open) dlg.close();
+    },
+
+    async applyThresholdBand(row) {
+      const w = parseFloat(row.edit_width);
+      if (isNaN(w) || w <= 0) {
+        this.error = 'Invalid width (must be a positive number in mm).';
+        return;
+      }
+      this.loading = true;
+      this.loadingMsg = `Applying threshold ${row.capacity_min}-${row.capacity_max ?? '∞'} → ${w}mm...`;
+      try {
+        await this.overrideThreshold(row.capacity_min, row.capacity_max, w);
+        row.current_width = w;
+        row.is_override = true;
+        row.edit_width = '';
+      } catch (e) {
+        this.error = e.message;
+      } finally {
+        this.loading = false;
+        this.loadingMsg = '';
+      }
+    },
+
+    async deleteThresholdBand(row) {
+      this.loading = true;
+      this.loadingMsg = `Resetting band ${row.capacity_min}-${row.capacity_max ?? '∞'} to default...`;
+      try {
+        const r = await api.deleteThresholdOverride(this.sessionId, row.capacity_min, row.capacity_max);
+        this.model.summary = r.summary || this.model.summary;
+        if (r.affected_results) {
+          for (const nr of r.affected_results) {
+            const d = this.doors.find(x => x.global_id === nr.door_global_id);
+            if (d) d.check_result = nr;
+          }
+        }
+        row.current_width = row.default_width;
+        row.is_override = false;
+        this.applyCheckColors();
+        if (this.filterStoreyId) this._focusStoreyInViewer(this.filterStoreyId);
+        else this.viewer.focusDoors([]);
+      } catch (e) {
+        this.error = e.message;
+      } finally {
+        this.loading = false;
+        this.loadingMsg = '';
+      }
+    },
+
+    async resetAllThresholds() {
+      if (!this.sessionId) return;
+      this.loading = true;
+      this.loadingMsg = 'Resetting all thresholds to defaults...';
+      try {
+        const r = await api.deleteAllThresholdOverrides(this.sessionId);
+        this.model.summary = r.summary || this.model.summary;
+        if (r.affected_results) {
+          for (const nr of r.affected_results) {
+            const d = this.doors.find(x => x.global_id === nr.door_global_id);
+            if (d) d.check_result = nr;
+          }
+        }
+        for (const row of this.thrDialogRows) {
+          row.current_width = row.default_width;
+          row.is_override = false;
+          row.edit_width = '';
+        }
+        this.applyCheckColors();
+        if (this.filterStoreyId) this._focusStoreyInViewer(this.filterStoreyId);
+        else this.viewer.focusDoors([]);
+      } catch (e) {
+        this.error = e.message;
+      } finally {
+        this.loading = false;
+        this.loadingMsg = '';
+      }
+    },
+
+    async toggleDoorChecked(door) {
+      const newVal = !door.is_checked;
+      try {
+        await api.override(this.sessionId, {
+          type: 'checked',
+          global_id: door.global_id,
+          value: newVal,
+        });
+        door.is_checked = newVal;
+      } catch (e) {
+        this.error = e.message;
+      }
+    },
+
+    async batchToggleChecked(value) {
+      if (!this.sessionId) return;
+      const ids = this.filteredDoors.map(d => d.global_id);
+      if (ids.length === 0) return;
+      this.loading = true;
+      this.loadingMsg = `${value ? 'Checking' : 'Unchecking'} ${ids.length} doors...`;
+      try {
+        await api.batchChecked(this.sessionId, ids, value);
+        for (const d of this.filteredDoors) {
+          d.is_checked = value;
+        }
+      } catch (e) {
+        this.error = e.message;
+      } finally {
+        this.loading = false;
+        this.loadingMsg = '';
+      }
+    },
+
+    tooltip(name) {
+      const tips = {
+        global_id: 'IFC GlobalId — 22-character base64 unique identifier for this door entity in the IFC file',
+        overall_width: 'Overall Width — door overall width from IFC OverallWidth attribute (100% fill rate). This is NOT clear width; it is the door panel width, actual clear width may be smaller',
+        width_source: 'Width Source — how width was obtained: overall_estimate (from OverallWidth, proxy for clear width) | clear_width (field-measured) | unknown (no width data)',
+        fire_exit: 'Fire Exit — whether this door serves as a fire exit. Source: pset (Pset_DoorCommon.FireExit, 0% fill rate) | name_keyword (door name contains fire/emergency) | user_override (manually marked)',
+        fe_source: 'FE Source — how fire exit status was determined: pset | name_keyword | user_override | not_fire_exit',
+        related_space: 'Related Space — the IfcSpace connected to this door via IfcRelSpaceBoundary. Capacity and UseClass are inherited from this space',
+        use_class: 'UseClass — space usage classification per Table B1 (16 categories). Determines occupant density factor (m²/person or beds/seats). Source: longname_keyword | user_override',
+        occupant_capacity: 'Occupant Capacity — estimated number of occupants in the related space. Calculation: area × use_factor (for area_per_person_m2 type). Source: auto_area_calc | user_input | unknown',
+        capacity_source: 'Capacity Source — how capacity was derived: auto_area_calc (area×factor) | user_input (manually entered) | table_b1_factor | unknown (missing area or use_class)',
+        threshold: 'Threshold — minimum required clear door width (mm) per Table B2 (capacity>3) or Clause B13.4 (capacity≤3, absolute minimum 750mm). May be overridden by user',
+        measured: 'Measured — the door width used for compliance check (mm). Currently OverallWidth proxy, NOT field-measured clear width',
+        deficit: 'Deficit — Threshold minus Measured (mm). Positive = door too narrow (FAIL). Negative = surplus margin',
+        needs_review: 'Needs Human Review — true when width_source is not clear_width (OverallWidth is a proxy, not actual clear width) or capacity is unknown. Requires field verification',
+        status: 'Status — pass (meets threshold) | fail (below threshold) | unknown (cannot determine, missing capacity or width) | overridden (user-modified threshold applied)',
+        rule_clause: 'Rule Clause — the FSB 2011 clause applied: B7.1 (Table B2, capacity>3) | B13.4 (absolute minimum, capacity≤3) | N/A (excluded space)',
+        is_checked: 'Checked — manual human review flag. Marks whether a human reviewer has inspected this door. Does not affect compliance calculation',
+      };
+      return tips[name] || '';
     },
   }));
 });
