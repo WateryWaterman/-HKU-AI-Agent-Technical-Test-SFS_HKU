@@ -7,6 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from .door_leaf import get_door_leaf_info
 from .door_space_link import get_door_primary_space
 from .door_width import get_door_width
 from .fire_exit_infer import infer_fire_exit
@@ -64,6 +65,7 @@ def analyze_ifc(path: str | Path, preset_id: str = "hk_fsb_2011_b2_default") -> 
         space_ids_primary, space_ids_other = get_door_primary_space(d)
         all_space_ids = [s for s in [space_ids_primary, space_ids_other] if s]
         is_fe, fe_src, fe_reasons = infer_fire_exit(d, all_space_ids, space_infos)
+        is_double_leaf, leaf_source = get_door_leaf_info(d)
 
         space_info = space_infos.get(space_ids_primary, {
             "capacity": None,
@@ -82,6 +84,8 @@ def analyze_ifc(path: str | Path, preset_id: str = "hk_fsb_2011_b2_default") -> 
             "is_fire_exit": is_fe,
             "fire_exit_source": fe_src,
             "fire_exit_reasons": fe_reasons,
+            "is_double_leaf": is_double_leaf,
+            "double_leaf_source": leaf_source,
             "is_checked": False,
             "space_global_id": space_ids_primary,
             "space_global_id_other": space_ids_other,

@@ -198,6 +198,35 @@
             </div>
 
             <div class="panel" x-show="presets">
+              <h3>Calculation Formulas</h3>
+              <div style="font-size:11px;line-height:1.6;color:#374151">
+                <div style="margin-bottom:8px">
+                  <strong>1. Occupant Capacity</strong> <span class="note">(Table B1, Clause B4, PDF p.34-36)</span><br/>
+                  <code style="background:#f3f4f6;padding:1px 4px;border-radius:2px;font-size:10px">capacity = ceil(usable_floor_area_m² / occupancy_factor)</code><br/>
+                  <span class="note">factor from Table B1 by Use Class (e.g. office = 9 m²/person); excluded spaces (corridor/toilet/stair/lift) → capacity = 0</span>
+                </div>
+                <div style="margin-bottom:8px">
+                  <strong>2. Door Width Threshold</strong> <span class="note">(Table B2, Clause B7.1, PDF p.43)</span><br/>
+                  <code style="background:#f3f4f6;padding:1px 4px;border-radius:2px;font-size:10px">threshold = Table B2 lookup by occupant capacity</code><br/>
+                  <span class="note">capacity ≤ 3 → Clause B13.4 absolute minimum 750mm; capacity &gt; 3000 → BA case-by-case</span>
+                </div>
+                <div style="margin-bottom:8px">
+                  <strong>3. Clear Width</strong> <span class="note">(Table B2 Note 2)</span><br/>
+                  <span class="note">"least clear width measured between the vertical members of the door frame" — currently proxied by IfcDoor.OverallWidth (needs_human_review=true)</span>
+                </div>
+                <div style="margin-bottom:8px">
+                  <strong>4. Double-leaf Check</strong> <span class="note">(Clause B13.4, PDF p.50-52)</span><br/>
+                  <code style="background:#f3f4f6;padding:1px 4px;border-radius:2px;font-size:10px">estimated_leaf = measured_width / 2; must be ≥ 600mm</code><br/>
+                  <span class="note">assumes 50/50 split; actual leaf widths need field verification</span>
+                </div>
+                <div>
+                  <strong>5. Status Logic</strong><br/>
+                  <span class="note">pass: width ≥ threshold AND leaf ≥ 600mm (if double-leaf)<br/>fail: width &lt; threshold OR leaf &lt; 600mm<br/>non_passage: capacity = 0/unknown OR width unknown (not an egress door)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="panel" x-show="presets">
               <h3>Threshold Override</h3>
               <div class="note" style="margin-bottom:8px">Edit Table B2 capacity band thresholds. Click to open the threshold editor dialog.</div>
               <button class="btn" @click="openThresholdDialog()" style="background:#2563eb;color:#fff;border:none;padding:6px 14px;border-radius:3px;cursor:pointer;font-size:12px">Edit Thresholds...</button>
@@ -223,6 +252,10 @@
                     <span class="badge" :style="`background:${selectedDoor.is_fire_exit ? '#22c55e' : '#9ca3af'}`" x-text="selectedDoor.is_fire_exit ? 'YES' : 'no'"></span>
                   </span></div>
                   <div class="kv"><span class="k term" :title="tooltip('fe_source')">FE Source <span class="tip-icon">ⓘ</span></span><span class="v" x-text="selectedDoor.fire_exit_source"></span></div>
+                  <div class="kv" x-show="selectedDoor.is_double_leaf != null"><span class="k">Double-leaf</span><span class="v">
+                    <span class="badge" :style="`background:${selectedDoor.is_double_leaf ? '#f59e0b' : '#9ca3af'}`" x-text="selectedDoor.is_double_leaf ? 'YES' : 'no'"></span>
+                    <span class="note" style="margin-left:4px" x-text="selectedDoor.double_leaf_source || ''"></span>
+                  </span></div>
                   <div class="kv"><span class="k term" :title="tooltip('is_checked')">Checked <span class="tip-icon">ⓘ</span></span><span class="v">
                     <span class="badge" :style="`background:${selectedDoor.is_checked ? '#22c55e' : '#9ca3af'}`" x-text="selectedDoor.is_checked ? 'YES' : 'no'"></span>
                   </span></div>
@@ -242,11 +275,15 @@
                   <h3>Related Space</h3>
                   <template x-if="selectedDoorDetail?.related_space">
                     <div>
-                      <div class="kv"><span class="k">Name</span><span class="v" x-text="selectedDoorDetail.related_space.long_name || selectedDoorDetail.related_space.name || '—'"></span></div>
+                      <div class="kv"><span class="k">Name</span><span class="v" x-text="selectedDoorDetail.related_space.name || '—'"></span></div>
+                      <div class="kv"><span class="k">LongName</span><span class="v" x-text="selectedDoorDetail.related_space.long_name || '—'"></span></div>
                       <div class="kv"><span class="k">Area</span><span class="v" x-text="selectedDoorDetail.related_space.area_m2 ? selectedDoorDetail.related_space.area_m2.toFixed(1)+' m²' : '—'"></span></div>
                       <div class="kv"><span class="k term" :title="tooltip('use_class')">Use Class <span class="tip-icon">ⓘ</span></span><span class="v" x-text="selectedDoorDetail.related_space.use_class || '—'"></span></div>
-                      <div class="kv"><span class="k term" :title="tooltip('occupant_capacity')">Capacity <span class="tip-icon">ⓘ</span></span><span class="v" x-text="fmtCapacity(selectedDoorDetail.related_space.occupant_capacity)"></span></div>
-                      <div class="kv"><span class="k term" :title="tooltip('capacity_source')">Cap Source <span class="tip-icon">ⓘ</span></span><span class="v" x-text="selectedDoorDetail.related_space.capacity_source"></span></div>
+                      <div class="kv"><span class="k">UC Source</span><span class="v" x-text="selectedDoorDetail.related_space.use_class_source"></span></div>
+                      <div class="kv" x-show="selectedDoorDetail.related_space.use_class_note"><span class="k">UC Note</span><span class="v" style="font-size:10px;color:#b45309" x-text="selectedDoorDetail.related_space.use_class_note"></span></div>
+                      <div class="kv"><span class="k term" :title="tooltip('occupant_capacity')">Capacity <span class="tip-icon">ⓘ</span></span><span class="v" x-text="fmtCapacity(selectedDoorDetail.related_space.capacity)"></span></div>
+                      <div class="kv"><span class="k term" :title="tooltip('capacity_source')">Cap Source <span class="v" x-text="selectedDoorDetail.related_space.capacity_source"></span></div>
+                      <div class="kv" x-show="selectedDoorDetail.related_space.factor != null"><span class="k">Factor</span><span class="v" x-text="selectedDoorDetail.related_space.factor + ' (' + selectedDoorDetail.related_space.factor_type + ')'"></span></div>
                       <div style="margin-top:8px">
                         <label style="font-size:11px;color:#6b7280">Override use class:</label>
                         <select @change="overrideSpaceUse(selectedDoorDetail.related_space, $event.target.value); $event.target.value=''">
@@ -281,6 +318,20 @@
                             <li x-text="note"></li>
                           </template>
                         </ul>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+
+                <div class="panel" x-show="selectedDoor.check_result" style="background:#fffbeb;border-color:#fde68a">
+                  <h3 style="color:#92400e">Why this status?</h3>
+                  <template x-if="selectedDoor.check_result">
+                    <div style="font-size:11px;line-height:1.6;color:#78350f">
+                      <template x-for="(step, idx) in statusTrace(selectedDoor, selectedDoorDetail)" :key="idx">
+                        <div style="display:flex;gap:6px;padding:2px 0" :style="step.highlight ? 'font-weight:600;color:#92400e' : ''">
+                          <span style="color:#d97706;flex-shrink:0" x-text="(idx+1) + '.'"></span>
+                          <span x-text="step.text"></span>
+                        </div>
                       </template>
                     </div>
                   </template>
