@@ -35,3 +35,6 @@ fsb-door-check/backend/uvicorn.err.log
 *.env
 fsb-door-check/.env
 fsb-door-check/backend/.env
+# BUT keep the template
+!.env.example
+!fsb-door-check/backend/.env.example
