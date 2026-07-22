@@ -28,3 +28,10 @@ fsb-door-check/backend/.uvicorn.pid
 # uvicorn runtime logs
 fsb-door-check/backend/uvicorn.log
 fsb-door-check/backend/uvicorn.err.log
+
+# Environment variables (API keys for DeepSeek / Resend etc.)
+.env
+.env.*
+*.env
+fsb-door-check/.env
+fsb-door-check/backend/.env
