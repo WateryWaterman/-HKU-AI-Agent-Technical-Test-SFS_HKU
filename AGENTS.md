@@ -36,7 +36,7 @@
   8. `git push fsb-door-check deploy-fsb:main` — fast-forward push（通常不需要 force）
   9. `git checkout main && git branch -D deploy-fsb` — 回到 main, 删临时分支
 - **注意**: 不要直接 `git push fsb-door-check main` — main 含完整工作区, 会破坏部署仓库结构。
-- **Railway 配置**: Root Directory 留空（用根目录）, Procfile = `web: cd backend && python -m app.main`。
+- **Railway 配置**: Root Directory 留空（用根目录）, builder = `DOCKERFILE`（railway.json）, 启动 = Dockerfile CMD `python -m app.main`。根级 Procfile 已删除，勿重建（Nixpacks 路线已废弃）。
 
 ## 网络
 
